@@ -1,0 +1,5 @@
+spring:
+  main:
+    banner-mode: off
+  jackson:
+    property-naming-strategy: SNAKE_CASE
