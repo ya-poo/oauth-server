@@ -3,6 +3,7 @@ package me.yapoo.oauth.handler.authorization
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
+import me.yapoo.oauth.domain.authorization.State
 import me.yapoo.oauth.domain.client.ClientId
 import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.log.info
@@ -18,6 +19,7 @@ import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.bodyValueAndAwait
 import org.springframework.web.reactive.function.server.buildAndAwait
 import org.springframework.web.reactive.function.server.queryParamOrNull
+import org.springframework.web.util.DefaultUriBuilderFactory
 import java.net.URI
 
 @Service
@@ -62,14 +64,36 @@ class AuthorizationHandler(
                         )
                 }
                 .bind()
+            val state = request.queryParamOrNull("state")
+                ?.let {
+                    State.of(it)
+                        .mapLeft {
+                            ServerResponse
+                                .status(HttpStatus.FOUND)
+                                .location(
+                                    DefaultUriBuilderFactory(redirectUri)
+                                        .builder()
+                                        .queryParam("error", AuthorizationErrorCode.InvalidRequest.value)
+                                        .queryParam("error_description", "invalid state value.")
+                                        .build()
+                                )
+                                .buildAndAwait()
+                        }.bind()
+                }
             val responseType = request.queryParamOrNull("response_type")
             coEnsureNotNull(responseType) {
                 ServerResponse
                     .status(HttpStatus.FOUND)
                     .location(
-                        URI.create(
-                            "$redirectUri?error=${AuthorizationErrorCode.InvalidRequest.value}&error_description=redirect+uri+must+be+specified"
-                        )
+                        DefaultUriBuilderFactory(redirectUri).builder()
+                            .apply {
+                                queryParam("error", AuthorizationErrorCode.InvalidRequest.value)
+                                queryParam("error_description", "response_type must be specified")
+                                if (state != null) {
+                                    queryParam("state", state.value)
+                                }
+                            }
+                            .build()
                     )
                     .buildAndAwait()
             }
@@ -77,9 +101,14 @@ class AuthorizationHandler(
                 ServerResponse
                     .status(HttpStatus.FOUND)
                     .location(
-                        URI.create(
-                            "$redirectUri?error=${AuthorizationErrorCode.UnsupportedResponseType.value}"
-                        )
+                        DefaultUriBuilderFactory(redirectUri).builder()
+                            .apply {
+                                queryParam("error", AuthorizationErrorCode.UnsupportedResponseType.value)
+                                if (state != null) {
+                                    queryParam("state", state.value)
+                                }
+                            }
+                            .build()
                     )
                     .buildAndAwait()
             }
