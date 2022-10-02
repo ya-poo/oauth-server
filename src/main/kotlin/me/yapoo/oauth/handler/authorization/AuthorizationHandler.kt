@@ -25,7 +25,6 @@ import org.springframework.web.reactive.function.server.bodyValueAndAwait
 import org.springframework.web.reactive.function.server.buildAndAwait
 import org.springframework.web.reactive.function.server.queryParamOrNull
 import org.springframework.web.util.DefaultUriBuilderFactory
-import java.net.URI
 
 @Service
 class AuthorizationHandler(
@@ -141,9 +140,15 @@ class AuthorizationHandler(
             )
             authorizationSessionRepository.add(authorizationSession)
 
+            // TODO: asi は暗号化する, scope も含める。JWE にしたい。
             ServerResponse
                 .status(HttpStatus.FOUND)
-                .location(URI.create("http://localhost:3000"))
+                .location(
+                    DefaultUriBuilderFactory("http://localhost:3000")
+                        .builder()
+                        .queryParam("asi", authorizationSession.id.value)
+                        .build()
+                )
                 .buildAndAwait()
         }
     }
