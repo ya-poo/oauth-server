@@ -4,8 +4,12 @@ import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
 import me.yapoo.oauth.domain.authorization.State
+import me.yapoo.oauth.domain.authorization.session.AuthorizationSession
+import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionId
+import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
 import me.yapoo.oauth.domain.client.ClientId
 import me.yapoo.oauth.domain.client.ClientRepository
+import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.log.info
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.coEnsureNotNull
@@ -26,6 +30,8 @@ import java.net.URI
 @Service
 class AuthorizationHandler(
     private val clientRepository: ClientRepository,
+    private val secureStringFactory: SecureStringFactory,
+    private val authorizationSessionRepository: AuthorizationSessionRepository,
 ) {
 
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -127,6 +133,13 @@ class AuthorizationHandler(
                     state
                 )
             }
+
+            val authorizationSession = AuthorizationSession(
+                id = AuthorizationSessionId.next(secureStringFactory),
+                scopes = scopes,
+                state = state
+            )
+            authorizationSessionRepository.add(authorizationSession)
 
             ServerResponse
                 .status(HttpStatus.FOUND)
