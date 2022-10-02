@@ -16,6 +16,10 @@ class ClientRepositoryImpl : ClientRepository {
             Client(
                 id = id,
                 name = "sample-client",
+                scopes = NonEmptyList(
+                    head = "user",
+                    tail = emptyList()
+                ),
                 redirectUris = NonEmptyList(
                     head = "http://localhost",
                     tail = emptyList()

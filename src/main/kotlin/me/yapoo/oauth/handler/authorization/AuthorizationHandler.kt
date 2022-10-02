@@ -9,6 +9,7 @@ import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.log.info
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.coEnsureNotNull
+import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
 import me.yapoo.oauth.web.error.ErrorCode
 import me.yapoo.oauth.web.error.ErrorResponse
 import org.slf4j.LoggerFactory
@@ -24,8 +25,10 @@ import java.net.URI
 
 @Service
 class AuthorizationHandler(
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
 ) {
+
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     // 認可エンドポイント (RFC 6749 - 3.1)
     // 現在は認可コードフロー (RFC 6749 - 4.1) のみ対応
@@ -77,51 +80,52 @@ class AuthorizationHandler(
                             logger.info { "invalid state parameter: $it" }
                         }
                         .mapLeft {
-                            ServerResponse
-                                .status(HttpStatus.FOUND)
-                                .location(
-                                    DefaultUriBuilderFactory(redirectUri)
-                                        .builder()
-                                        .queryParam("error", AuthorizationErrorCode.InvalidRequest.value)
-                                        .queryParam("error_description", "invalid state value.")
-                                        .build()
-                                )
-                                .buildAndAwait()
+                            ErrorRedirectResponse(
+                                redirectUri,
+                                AuthorizationErrorCode.InvalidRequest,
+                                "invalid state parameter value."
+                            )
                         }.bind()
                 }
             val responseType = request.queryParamOrNull("response_type")
             coEnsureNotNull(responseType) {
                 logger.info { "response_type must be specified" }
-                ServerResponse
-                    .status(HttpStatus.FOUND)
-                    .location(
-                        DefaultUriBuilderFactory(redirectUri).builder()
-                            .apply {
-                                queryParam("error", AuthorizationErrorCode.InvalidRequest.value)
-                                queryParam("error_description", "response_type must be specified")
-                                if (state != null) {
-                                    queryParam("state", state.value)
-                                }
-                            }
-                            .build()
-                    )
-                    .buildAndAwait()
+                ErrorRedirectResponse(
+                    redirectUri,
+                    AuthorizationErrorCode.InvalidRequest,
+                    "response_type must be specified",
+                    state
+                )
             }
             coEnsure(responseType == "code") {
                 logger.info { "invalid response_type: $responseType" }
-                ServerResponse
-                    .status(HttpStatus.FOUND)
-                    .location(
-                        DefaultUriBuilderFactory(redirectUri).builder()
-                            .apply {
-                                queryParam("error", AuthorizationErrorCode.UnsupportedResponseType.value)
-                                if (state != null) {
-                                    queryParam("state", state.value)
-                                }
-                            }
-                            .build()
+                ErrorRedirectResponse(
+                    redirectUri,
+                    AuthorizationErrorCode.UnsupportedResponseType,
+                    "responseType $responseType is not supported",
+                    state
+                )
+            }
+            // RFC 6449 - 3.3
+            // ここでは `scope` の省略は許可しないことにする。
+            val scopes = (request.queryParamOrNull("scope")
+                ?.split(" ")
+                ?: emptyList())
+                .rightIfNotEmpty {
+                    ErrorRedirectResponse(
+                        redirectUri,
+                        AuthorizationErrorCode.InvalidScope,
+                        "scope must be specified",
+                        state
                     )
-                    .buildAndAwait()
+                }.bind()
+            coEnsure(client.scopes.containsAll(scopes)) {
+                ErrorRedirectResponse(
+                    redirectUri,
+                    AuthorizationErrorCode.InvalidScope,
+                    "contains scopes which are not permitted",
+                    state
+                )
             }
 
             ServerResponse
@@ -131,7 +135,26 @@ class AuthorizationHandler(
         }
     }
 
-    companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
+    @Suppress("FunctionName")
+    private suspend fun ErrorRedirectResponse(
+        redirectUri: String,
+        error: AuthorizationErrorCode,
+        errorDescription: String,
+        state: State? = null,
+    ): ServerResponse {
+        return ServerResponse
+            .status(HttpStatus.FOUND)
+            .location(
+                DefaultUriBuilderFactory(redirectUri)
+                    .builder()
+                    .apply {
+                        queryParam("error", error.value)
+                        queryParam("error_description", errorDescription)
+                        if (state != null) {
+                            queryParam("state", state.value)
+                        }
+                    }
+                    .build()
+            ).buildAndAwait()
     }
 }

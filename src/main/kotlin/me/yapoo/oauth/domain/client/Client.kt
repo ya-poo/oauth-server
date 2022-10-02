@@ -7,6 +7,7 @@ import arrow.core.continuations.either
 data class Client(
     val id: ClientId,
     val name: String,
+    val scopes: NonEmptyList<String>,
     val redirectUris: NonEmptyList<String>,
 ) {
 
