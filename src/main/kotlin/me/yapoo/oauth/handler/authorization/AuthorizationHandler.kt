@@ -41,6 +41,9 @@ class AuthorizationHandler(
                             ErrorResponse(ErrorCode.BAD_REQUEST.value, "`client_id` must be specified.")
                         )
                 }
+                .tapLeft {
+                    logger.info { "`client_id` must be specified." }
+                }
                 .bind()
             val client = clientRepository.findById(clientId)
                 .rightIfNotNull {
@@ -57,6 +60,9 @@ class AuthorizationHandler(
                 .let {
                     client.validateRedirectUri(it)
                 }
+                .tapLeft {
+                    logger.info { "invalid redirect_uri: $it. client_id: ${clientId.value}" }
+                }
                 .mapLeft {
                     ServerResponse.badRequest()
                         .bodyValueAndAwait(
@@ -67,6 +73,9 @@ class AuthorizationHandler(
             val state = request.queryParamOrNull("state")
                 ?.let {
                     State.of(it)
+                        .tapLeft { _ ->
+                            logger.info { "invalid state parameter: $it" }
+                        }
                         .mapLeft {
                             ServerResponse
                                 .status(HttpStatus.FOUND)
@@ -82,6 +91,7 @@ class AuthorizationHandler(
                 }
             val responseType = request.queryParamOrNull("response_type")
             coEnsureNotNull(responseType) {
+                logger.info { "response_type must be specified" }
                 ServerResponse
                     .status(HttpStatus.FOUND)
                     .location(
@@ -98,6 +108,7 @@ class AuthorizationHandler(
                     .buildAndAwait()
             }
             coEnsure(responseType == "code") {
+                logger.info { "invalid response_type: $responseType" }
                 ServerResponse
                     .status(HttpStatus.FOUND)
                     .location(
