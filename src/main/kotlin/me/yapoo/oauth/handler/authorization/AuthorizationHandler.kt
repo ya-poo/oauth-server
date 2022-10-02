@@ -106,7 +106,7 @@ class AuthorizationHandler(
                     state
                 )
             }
-            // RFC 6449 - 3.3
+            // RFC 6749 - 3.3
             // ここでは `scope` の省略は許可しないことにする。
             val scopes = (request.queryParamOrNull("scope")
                 ?.split(" ")
@@ -135,6 +135,8 @@ class AuthorizationHandler(
         }
     }
 
+    // RFC 6749 4.1.2.1
+    // ここでは `error_uri` は設定しない。
     @Suppress("FunctionName")
     private suspend fun ErrorRedirectResponse(
         redirectUri: String,
