@@ -9,7 +9,13 @@ data class Client(
     val name: String,
     val scopes: NonEmptyList<String>,
     val redirectUris: NonEmptyList<String>,
+    val type: Type,
 ) {
+    // RFC 6749 - 2.1
+    enum class Type {
+        Confidential,
+        Public,
+    }
 
     fun validateRedirectUri(
         uri: String?
