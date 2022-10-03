@@ -11,7 +11,13 @@ class AuthorizationSessionRepositoryImpl : AuthorizationSessionRepository {
 
     private val data = ConcurrentHashMap<AuthorizationSessionId, AuthorizationSession>()
 
-    override fun add(session: AuthorizationSession) {
+    override suspend fun add(session: AuthorizationSession) {
         data[session.id] = session
+    }
+
+    override suspend fun findById(
+        id: AuthorizationSessionId
+    ): AuthorizationSession? {
+        return data[id]
     }
 }
