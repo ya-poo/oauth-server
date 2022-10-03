@@ -135,6 +135,8 @@ class AuthorizationHandler(
 
             val authorizationSession = AuthorizationSession(
                 id = AuthorizationSessionId.next(secureStringFactory),
+                clientId = clientId,
+                redirectUri = redirectUri,
                 scopes = scopes,
                 state = state
             )
