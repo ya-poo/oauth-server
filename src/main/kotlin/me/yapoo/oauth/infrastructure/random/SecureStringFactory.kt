@@ -10,7 +10,7 @@ class SecureStringFactory {
     fun next(length: Int): String {
         val bytes = ByteArray(length)
         gen.nextBytes(bytes)
-        return Base64.getEncoder().encodeToString(bytes)
+        return Base64.getUrlEncoder().encodeToString(bytes)
     }
 
     companion object {
