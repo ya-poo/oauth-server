@@ -24,6 +24,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("io.arrow-kt:arrow-core:1.1.2")
+    implementation("com.password4j:password4j:1.6.0")
 //	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
 //	runtimeOnly("org.postgresql:postgresql")
 //	runtimeOnly("org.postgresql:r2dbc-postgresql")
