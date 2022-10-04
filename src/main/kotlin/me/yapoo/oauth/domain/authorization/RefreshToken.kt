@@ -1,16 +1,13 @@
 package me.yapoo.oauth.domain.authorization
 
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
-import java.time.Duration
 import java.time.Instant
 
-data class AccessToken(
+data class RefreshToken(
     val value: String,
     val authorizationId: AuthorizationId,
     val issuedAt: Instant,
 ) {
-
-    val expiresIn: Duration = Duration.ofMinutes(30)
 
     companion object {
         private const val TOKEN_LENGTH = 30
@@ -19,10 +16,10 @@ data class AccessToken(
             secureStringFactory: SecureStringFactory,
             authorizationId: AuthorizationId,
             now: Instant,
-        ): AccessToken {
-            return AccessToken(
-                authorizationId = authorizationId,
+        ): RefreshToken {
+            return RefreshToken(
                 value = secureStringFactory.next(TOKEN_LENGTH),
+                authorizationId = authorizationId,
                 issuedAt = now
             )
         }

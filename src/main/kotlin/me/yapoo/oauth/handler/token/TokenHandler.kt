@@ -3,12 +3,16 @@ package me.yapoo.oauth.handler.token
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
+import me.yapoo.oauth.domain.authorization.AccessToken
 import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
 import me.yapoo.oauth.domain.authorization.AuthorizationRepository
+import me.yapoo.oauth.domain.authorization.RefreshToken
+import me.yapoo.oauth.domain.authorization.RefreshTokenRepository
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
 import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientRepository
+import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.time.DateTimeFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import org.springframework.http.HttpStatus
@@ -25,8 +29,10 @@ class TokenHandler(
     private val authorizationRepository: AuthorizationRepository,
     private val authorizationSessionRepository: AuthorizationSessionRepository,
     private val accessTokenRepository: AccessTokenRepository,
+    private val refreshTokenRepository: RefreshTokenRepository,
     private val clientRepository: ClientRepository,
     private val dateTimeFactory: DateTimeFactory,
+    private val secureStringFactory: SecureStringFactory,
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
@@ -130,15 +136,6 @@ class TokenHandler(
                 )
             }
 
-            val accessToken = accessTokenRepository.findByAuthorizationId(authorizationCode.authorizationId)
-                .rightIfNotNull {
-                    ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
-                        TokenErrorResponse(
-                            TokenErrorResponse.ErrorCode.InvalidGrant,
-                            "expired authorization code"
-                        )
-                    )
-                }.bind()
             val authorization = authorizationRepository.findById(authorizationCode.authorizationId)
                 .rightIfNotNull {
                     ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
@@ -149,6 +146,19 @@ class TokenHandler(
                     )
                 }.bind()
 
+            val accessToken = AccessToken.new(
+                secureStringFactory,
+                authorizationCode.authorizationId,
+                now
+            )
+            accessTokenRepository.save(accessToken)
+            val refreshToken = RefreshToken.new(
+                secureStringFactory,
+                authorizationCode.authorizationId,
+                now
+            )
+            refreshTokenRepository.save(refreshToken)
+
             // RFC 6749 - 5.1
             ServerResponse.ok()
                 .headers {
@@ -157,9 +167,9 @@ class TokenHandler(
                 }
                 .bodyValueAndAwait(
                     TokenResponse(
-                        accessToken = accessToken.accessToken,
+                        accessToken = accessToken.value,
                         expiresIn = accessToken.expiresIn.seconds.toInt(),
-                        refreshToken = accessToken.refreshToken,
+                        refreshToken = refreshToken.value,
                         scope = authorization.scopes
                     )
                 )

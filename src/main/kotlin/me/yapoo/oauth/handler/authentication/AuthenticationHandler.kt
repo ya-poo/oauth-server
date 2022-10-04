@@ -3,8 +3,6 @@ package me.yapoo.oauth.handler.authentication
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
-import me.yapoo.oauth.domain.authorization.AccessToken
-import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.Authorization
 import me.yapoo.oauth.domain.authorization.AuthorizationCode
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
@@ -34,7 +32,6 @@ class AuthenticationHandler(
     private val userCredentialRepository: UserCredentialRepository,
     private val authorizationRepository: AuthorizationRepository,
     private val authorizationCodeRepository: AuthorizationCodeRepository,
-    private val accessTokenRepository: AccessTokenRepository,
     private val secureStringFactory: SecureStringFactory,
     private val dateTimeFactory: DateTimeFactory,
     private val uuidFactory: UuidFactory,
@@ -92,13 +89,6 @@ class AuthenticationHandler(
                 now
             )
             authorizationCodeRepository.save(authorizationCode)
-
-            val accessToken = AccessToken.new(
-                secureStringFactory,
-                authorizationId,
-                now
-            )
-            accessTokenRepository.save(accessToken)
 
             // RFC 6749 4.1.2
             ServerResponse.status(HttpStatus.FOUND)
