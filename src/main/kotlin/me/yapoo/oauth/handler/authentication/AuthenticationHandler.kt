@@ -3,6 +3,8 @@ package me.yapoo.oauth.handler.authentication
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
+import me.yapoo.oauth.domain.authorization.AccessToken
+import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.Authorization
 import me.yapoo.oauth.domain.authorization.AuthorizationCode
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
@@ -32,6 +34,7 @@ class AuthenticationHandler(
     private val userCredentialRepository: UserCredentialRepository,
     private val authorizationRepository: AuthorizationRepository,
     private val authorizationCodeRepository: AuthorizationCodeRepository,
+    private val accessTokenRepository: AccessTokenRepository,
     private val secureStringFactory: SecureStringFactory,
     private val dateTimeFactory: DateTimeFactory,
     private val uuidFactory: UuidFactory,
@@ -47,43 +50,38 @@ class AuthenticationHandler(
                 .let(::AuthorizationSessionId)
                 .let { authorizationSessionRepository.findById(it) }
                 .rightIfNotNull {
-                    ServerResponse.status(HttpStatus.NOT_FOUND)
-                        .bodyValueAndAwait(
-                            ErrorResponse(
-                                ErrorCode.NOT_FOUND.value,
-                                "authorization session was not found"
-                            )
+                    ServerResponse.status(HttpStatus.NOT_FOUND).bodyValueAndAwait(
+                        ErrorResponse(
+                            ErrorCode.NOT_FOUND.value,
+                            "authorization session was not found"
                         )
+                    )
                 }.bind()
 
             val userCredential = userCredentialRepository.findByEmail(body.email)
                 .rightIfNotNull {
-                    ServerResponse.status(HttpStatus.BAD_REQUEST)
-                        .bodyValueAndAwait(
-                            ErrorResponse(
-                                ErrorCode.BAD_REQUEST.value,
-                                "email or password is invalid."
-                            )
-                        )
-                }.bind()
-            coEnsure(userCredential.accepts(body.password)) {
-                ServerResponse.status(HttpStatus.BAD_REQUEST)
-                    .bodyValueAndAwait(
+                    ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
                         ErrorResponse(
                             ErrorCode.BAD_REQUEST.value,
                             "email or password is invalid."
                         )
                     )
+                }.bind()
+            coEnsure(userCredential.accepts(body.password)) {
+                ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
+                    ErrorResponse(
+                        ErrorCode.BAD_REQUEST.value,
+                        "email or password is invalid."
+                    )
+                )
             }
             val now = dateTimeFactory.now()
             val authorizationId = AuthorizationId.new(uuidFactory)
             val authorization = Authorization.new(
-                secureStringFactory = secureStringFactory,
                 id = authorizationId,
                 userSubject = userCredential.id,
                 clientId = authorizationSession.clientId,
                 scopes = authorizationSession.scopes,
-                now = now,
             )
             authorizationRepository.save(authorization)
 
@@ -94,6 +92,13 @@ class AuthenticationHandler(
                 now
             )
             authorizationCodeRepository.save(authorizationCode)
+
+            val accessToken = AccessToken.new(
+                secureStringFactory,
+                authorizationId,
+                now
+            )
+            accessTokenRepository.save(accessToken)
 
             // RFC 6749 4.1.2
             ServerResponse.status(HttpStatus.FOUND)

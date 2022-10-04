@@ -3,7 +3,7 @@ package me.yapoo.oauth.handler.token
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
-import me.yapoo.oauth.domain.authorization.Authorization
+import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
 import me.yapoo.oauth.domain.authorization.AuthorizationRepository
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
@@ -24,6 +24,7 @@ class TokenHandler(
     private val authorizationCodeRepository: AuthorizationCodeRepository,
     private val authorizationRepository: AuthorizationRepository,
     private val authorizationSessionRepository: AuthorizationSessionRepository,
+    private val accessTokenRepository: AccessTokenRepository,
     private val clientRepository: ClientRepository,
     private val dateTimeFactory: DateTimeFactory,
 ) {
@@ -128,6 +129,16 @@ class TokenHandler(
                     )
                 )
             }
+
+            val accessToken = accessTokenRepository.findByAuthorizationId(authorizationCode.authorizationId)
+                .rightIfNotNull {
+                    ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "expired authorization code"
+                        )
+                    )
+                }.bind()
             val authorization = authorizationRepository.findById(authorizationCode.authorizationId)
                 .rightIfNotNull {
                     ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
@@ -139,9 +150,9 @@ class TokenHandler(
                 }.bind()
             ServerResponse.ok().bodyValueAndAwait(
                 TokenResponse(
-                    accessToken = authorization.accessToken,
-                    expiresIn = Authorization.expiresIn.seconds.toInt(),
-                    refreshToken = authorization.refreshToken,
+                    accessToken = accessToken.accessToken,
+                    expiresIn = accessToken.expiresIn.seconds.toInt(),
+                    refreshToken = accessToken.refreshToken,
                     scope = authorization.scopes
                 )
             )
