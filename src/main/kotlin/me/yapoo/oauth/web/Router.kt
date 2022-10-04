@@ -3,6 +3,7 @@ package me.yapoo.oauth.web
 import arrow.core.merge
 import me.yapoo.oauth.handler.authentication.AuthenticationHandler
 import me.yapoo.oauth.handler.authorization.AuthorizationHandler
+import me.yapoo.oauth.handler.token.TokenHandler
 import me.yapoo.oauth.web.error.handleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -14,6 +15,7 @@ import org.springframework.web.reactive.function.server.coRouter
 class Router(
     private val authorizationHandler: AuthorizationHandler,
     private val authenticationHandler: AuthenticationHandler,
+    private val tokenHandler: TokenHandler,
 ) {
 
     @Bean
@@ -23,6 +25,9 @@ class Router(
         }
         POST("/authentication") {
             authenticationHandler.handle(it).merge()
+        }
+        POST("/token") {
+            tokenHandler.handle(it).merge()
         }
         handleException(logger)
     }

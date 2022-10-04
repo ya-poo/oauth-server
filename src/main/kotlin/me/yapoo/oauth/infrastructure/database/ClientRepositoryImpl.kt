@@ -23,7 +23,8 @@ class ClientRepositoryImpl : ClientRepository {
                 redirectUris = NonEmptyList(
                     head = "http://localhost",
                     tail = emptyList()
-                )
+                ),
+                type = Client.Type.Confidential
             )
         }
     }

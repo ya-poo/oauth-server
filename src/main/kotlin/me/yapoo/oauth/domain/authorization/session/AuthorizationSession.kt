@@ -10,4 +10,5 @@ data class AuthorizationSession(
     val scopes: NonEmptyList<String>,
     val state: State?,
     val redirectUri: String,
+    val redirectUriSpecified: Boolean,
 )

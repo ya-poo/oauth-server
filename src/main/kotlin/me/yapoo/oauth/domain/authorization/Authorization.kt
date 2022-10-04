@@ -4,6 +4,7 @@ import arrow.core.NonEmptyList
 import me.yapoo.oauth.domain.client.ClientId
 import me.yapoo.oauth.domain.user.UserSubject
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
+import java.time.Duration
 import java.time.Instant
 
 data class Authorization(
@@ -17,7 +18,9 @@ data class Authorization(
 ) {
 
     companion object {
-        private const val TOKEN_LENGTH = 50
+        val expiresIn: Duration = Duration.ofDays(1)
+
+        private const val TOKEN_LENGTH = 30
 
         fun new(
             secureStringFactory: SecureStringFactory,

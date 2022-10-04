@@ -90,6 +90,7 @@ class AuthenticationHandler(
             val authorizationCode = AuthorizationCode.new(
                 secureStringFactory,
                 authorizationId,
+                authorizationSession.id,
                 now
             )
             authorizationCodeRepository.save(authorizationCode)

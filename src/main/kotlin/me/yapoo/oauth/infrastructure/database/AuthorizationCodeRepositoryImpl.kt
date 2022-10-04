@@ -14,4 +14,10 @@ class AuthorizationCodeRepositoryImpl : AuthorizationCodeRepository {
     ) {
         list.add(authorizationCode)
     }
+
+    override suspend fun findByCode(
+        code: String,
+    ): AuthorizationCode? {
+        return list.singleOrNull { it.value == code }
+    }
 }

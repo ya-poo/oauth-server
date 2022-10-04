@@ -138,7 +138,8 @@ class AuthorizationHandler(
                 clientId = clientId,
                 redirectUri = redirectUri,
                 scopes = scopes,
-                state = state
+                state = state,
+                redirectUriSpecified = request.queryParamOrNull("redirect_uri") != null
             )
             authorizationSessionRepository.add(authorizationSession)
 
