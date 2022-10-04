@@ -13,6 +13,7 @@ class AuthorizationRepositoryImpl : AuthorizationRepository {
     override suspend fun save(
         authorization: Authorization
     ) {
+        list.removeIf { it.id == authorization.id }
         list.add(authorization)
     }
 

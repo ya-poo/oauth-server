@@ -15,6 +15,7 @@ import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.time.DateTimeFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
+import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.util.MultiValueMap
@@ -36,12 +37,10 @@ class TokenHandler(
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
-    // TODO : refresh_token
     suspend fun handle(
         request: ServerRequest
     ): Either<ServerResponse, ServerResponse> {
         return either {
-            // RFC 6749 - 3.2, 4.1.3
             // TODO : クライアント認証
             val body = request.awaitFormData()
             val grantType = body.getSingle("grant_type")
@@ -55,6 +54,7 @@ class TokenHandler(
                 }.bind()
             when (grantType) {
                 "authorization_code" -> handleAuthorizationCode(body).bind()
+                "refresh_token" -> handleRefreshToken(body).bind()
                 else -> ServerResponse.badRequest().bodyValueAndAwait(
                     TokenErrorResponse(
                         TokenErrorResponse.ErrorCode.UnsupportedGrantType,
@@ -65,6 +65,8 @@ class TokenHandler(
         }
     }
 
+    // RFC 6749 - 4.1.3, 4.1.4, 5.1, 5.2
+    // 認可コードフローにおけるアクセストークン発行
     private suspend fun handleAuthorizationCode(
         body: MultiValueMap<String, String>
     ): Either<ServerResponse, ServerResponse> {
@@ -179,6 +181,93 @@ class TokenHandler(
                         expiresIn = accessToken.expiresIn.seconds.toInt(),
                         refreshToken = refreshToken.value,
                         scope = authorization.scopes
+                    )
+                )
+        }
+    }
+
+    // RFC 6749 - 5.1, 5.2, 6
+    // リフレッシュトークンによるアクセストークン更新
+    private suspend fun handleRefreshToken(
+        body: MultiValueMap<String, String>,
+    ): Either<ServerResponse, ServerResponse> {
+        return either {
+            val requestRefreshToken = body.getSingle("refresh_token")
+                .rightIfNotNull {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidRequest,
+                            "refresh_token must be specified"
+                        )
+                    )
+                }.bind()
+
+            val refreshToken = refreshTokenRepository.findByToken(requestRefreshToken)
+                .rightIfNotNull {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "invalid refresh_token"
+                        )
+                    )
+                }.bind()
+            val now = dateTimeFactory.now()
+            coEnsure(!refreshToken.expired(now)) {
+                ServerResponse.badRequest().bodyValueAndAwait(
+                    TokenErrorResponse(
+                        TokenErrorResponse.ErrorCode.InvalidGrant,
+                        "refresh_token expired"
+                    )
+                )
+            }
+
+            val authorization = authorizationRepository.findById(refreshToken.authorizationId)
+                .rightIfNotNull {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "invalid refresh_token"
+                        )
+                    )
+                }.bind()
+            val scopes = (body.getSingle("scope")?.split(" ")
+                ?: authorization.scopes)
+                .rightIfNotEmpty {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidScope,
+                            "invalid scope"
+                        )
+                    )
+                }.bind()
+            coEnsure(authorization.scopes.containsAll(scopes)) {
+                ServerResponse.badRequest().bodyValueAndAwait(
+                    TokenErrorResponse(
+                        TokenErrorResponse.ErrorCode.InvalidScope,
+                        "invalid scope"
+                    )
+                )
+            }
+            authorizationRepository.save(
+                authorization.copy(scopes = scopes)
+            )
+            val nextRefreshToken = refreshToken.next(secureStringFactory, now)
+            refreshTokenRepository.save(nextRefreshToken)
+
+            val accessToken = AccessToken.new(secureStringFactory, authorization.id, now)
+            accessTokenRepository.save(accessToken)
+
+            ServerResponse.ok()
+                .headers {
+                    it.cacheControl = "no-store"
+                    it.pragma = "no-cache"
+                }
+                .bodyValueAndAwait(
+                    TokenResponse(
+                        accessToken = accessToken.value,
+                        expiresIn = accessToken.expiresIn.seconds.toInt(),
+                        refreshToken = refreshToken.value,
+                        scope = scopes
                     )
                 )
         }

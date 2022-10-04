@@ -12,6 +12,7 @@ class AccessTokenRepositoryImpl : AccessTokenRepository {
     override suspend fun save(
         accessToken: AccessToken
     ) {
+        list.removeIf { it.value == accessToken.value }
         list.add(accessToken)
     }
 }

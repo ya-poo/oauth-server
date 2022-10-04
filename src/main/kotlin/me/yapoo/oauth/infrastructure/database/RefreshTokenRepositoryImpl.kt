@@ -12,6 +12,13 @@ class RefreshTokenRepositoryImpl : RefreshTokenRepository {
     override suspend fun save(
         refreshToken: RefreshToken
     ) {
+        list.removeIf { it.value == refreshToken.value }
         list.add(refreshToken)
+    }
+
+    override suspend fun findByToken(
+        refreshToken: String
+    ): RefreshToken? {
+        return list.singleOrNull { it.value == refreshToken }
     }
 }
