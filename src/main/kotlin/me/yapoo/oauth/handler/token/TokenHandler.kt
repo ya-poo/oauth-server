@@ -53,14 +53,22 @@ class TokenHandler(
                         )
                     )
                 }.bind()
-            coEnsure(grantType == "authorization_code") {
-                ServerResponse.badRequest().bodyValueAndAwait(
+            when (grantType) {
+                "authorization_code" -> handleAuthorizationCode(body).bind()
+                else -> ServerResponse.badRequest().bodyValueAndAwait(
                     TokenErrorResponse(
                         TokenErrorResponse.ErrorCode.UnsupportedGrantType,
-                        "only authorization_code is accepted as grant_type"
+                        "invalid grant_type"
                     )
                 )
             }
+        }
+    }
+
+    private suspend fun handleAuthorizationCode(
+        body: MultiValueMap<String, String>
+    ): Either<ServerResponse, ServerResponse> {
+        return either {
             val code = body.getSingle("code")
                 .rightIfNotNull {
                     ServerResponse.badRequest().bodyValueAndAwait(
