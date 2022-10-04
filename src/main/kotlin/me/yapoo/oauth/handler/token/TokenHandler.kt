@@ -148,14 +148,21 @@ class TokenHandler(
                         )
                     )
                 }.bind()
-            ServerResponse.ok().bodyValueAndAwait(
-                TokenResponse(
-                    accessToken = accessToken.accessToken,
-                    expiresIn = accessToken.expiresIn.seconds.toInt(),
-                    refreshToken = accessToken.refreshToken,
-                    scope = authorization.scopes
+
+            // RFC 6749 - 5.1
+            ServerResponse.ok()
+                .headers {
+                    it.cacheControl = "no-store"
+                    it.pragma = "no-cache"
+                }
+                .bodyValueAndAwait(
+                    TokenResponse(
+                        accessToken = accessToken.accessToken,
+                        expiresIn = accessToken.expiresIn.seconds.toInt(),
+                        refreshToken = accessToken.refreshToken,
+                        scope = authorization.scopes
+                    )
                 )
-            )
         }
     }
 
