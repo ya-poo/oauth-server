@@ -14,8 +14,8 @@ import me.yapoo.oauth.log.info
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.coEnsureNotNull
 import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
-import me.yapoo.oauth.web.error.ErrorCode
-import me.yapoo.oauth.web.error.ErrorResponse
+import me.yapoo.oauth.router.error.ErrorCode
+import me.yapoo.oauth.router.error.ErrorResponse
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service

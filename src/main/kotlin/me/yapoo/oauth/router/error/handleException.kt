@@ -1,4 +1,4 @@
-package me.yapoo.oauth.web.error
+package me.yapoo.oauth.router.error
 
 import me.yapoo.oauth.log.error
 import org.slf4j.Logger

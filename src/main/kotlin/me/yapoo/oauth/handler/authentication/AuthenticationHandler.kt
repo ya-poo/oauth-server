@@ -15,8 +15,8 @@ import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.random.UuidFactory
 import me.yapoo.oauth.infrastructure.time.DateTimeFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
-import me.yapoo.oauth.web.error.ErrorCode
-import me.yapoo.oauth.web.error.ErrorResponse
+import me.yapoo.oauth.router.error.ErrorCode
+import me.yapoo.oauth.router.error.ErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.server.ServerRequest

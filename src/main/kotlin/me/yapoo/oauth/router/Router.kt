@@ -1,4 +1,4 @@
-package me.yapoo.oauth.web
+package me.yapoo.oauth.router
 
 import arrow.core.merge
 import me.yapoo.oauth.handler.authentication.AuthenticationHandler
@@ -7,7 +7,7 @@ import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
 import me.yapoo.oauth.mixin.spring.getSingle
-import me.yapoo.oauth.web.error.handleException
+import me.yapoo.oauth.router.error.handleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
@@ -43,7 +43,6 @@ class Router(
                         "invalid grant_type"
                     )
                 )
-
             }
         }
         handleException(logger)
