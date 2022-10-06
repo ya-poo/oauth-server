@@ -33,6 +33,7 @@ class AuthorizationHandler(
 
     // 認可エンドポイント (RFC 6749 - 3.1)
     // 現在は認可コードフロー (RFC 6749 - 4.1) のみ対応
+    // TODO : いくつかのリクエスト値の値のフォーマット (文字種) の検査
     suspend fun handle(
         request: ServerRequest
     ): Either<ServerResponse, ServerResponse> {

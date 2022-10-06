@@ -29,7 +29,7 @@ class ClientAuthenticator(
 
             val clientSecret = body.getSingle("client_secret").bind()
 
-            val clientCredential = clientCredentialRepository.find(clientId)
+            val clientCredential = clientCredentialRepository.find(clientId).bind()
 
             ensure(clientCredential.accepts(clientSecret))
 

@@ -9,23 +9,31 @@ import org.springframework.stereotype.Repository
 @Repository
 class ClientRepositoryImpl : ClientRepository {
 
-    override suspend fun findById(id: ClientId): Client? {
-        return if (id.value != "sample-client") {
-            null
-        } else {
-            Client(
-                id = id,
-                name = "sample-client",
-                scopes = NonEmptyList(
-                    head = "user",
-                    tail = emptyList()
-                ),
-                redirectUris = NonEmptyList(
-                    head = "http://localhost",
-                    tail = emptyList()
-                ),
-                type = Client.Type.Confidential
-            )
-        }
+    private val list = mutableListOf(
+        Client(
+            id = ClientId("sample-client"),
+            name = "sample-client",
+            scopes = NonEmptyList(
+                head = "user",
+                tail = emptyList()
+            ),
+            redirectUris = NonEmptyList(
+                head = "http://localhost",
+                tail = emptyList()
+            ),
+            type = Client.Type.Confidential
+        )
+    )
+
+    override suspend fun save(
+        client: Client
+    ) {
+        list.add(client)
+    }
+
+    override suspend fun findById(
+        id: ClientId
+    ): Client? {
+        return list.singleOrNull { it.id == id }
     }
 }

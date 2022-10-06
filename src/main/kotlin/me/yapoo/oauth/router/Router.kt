@@ -3,6 +3,7 @@ package me.yapoo.oauth.router
 import arrow.core.merge
 import me.yapoo.oauth.handler.authentication.AuthenticationHandler
 import me.yapoo.oauth.handler.authorization.AuthorizationHandler
+import me.yapoo.oauth.handler.client.ClientRegistrationHandler
 import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
@@ -25,10 +26,14 @@ class Router(
     private val tokenRefreshTokenHandler: TokenRefreshTokenHandler,
     private val tokenAuthorizationCodeHandler: TokenAuthorizationCodeHandler,
     private val clientAuthenticator: ClientAuthenticator,
+    private val clientRegistrationHandler: ClientRegistrationHandler,
 ) {
 
     @Bean
     fun routes() = coRouter {
+        POST("/client") {
+            clientRegistrationHandler.handle(it).merge()
+        }
         GET("/authorization") {
             authorizationHandler.handle(it).merge()
         }

@@ -17,4 +17,16 @@ data class ClientCredential(
             .addSalt(salt)
             .withArgon2()
     }
+
+    companion object {
+        fun new(
+            id: ClientId,
+            plainCredential: String,
+        ): ClientCredential {
+            val credential = Password.hash(plainCredential)
+                .addRandomSalt()
+                .withArgon2()
+            return ClientCredential(id, credential.result, credential.salt)
+        }
+    }
 }
