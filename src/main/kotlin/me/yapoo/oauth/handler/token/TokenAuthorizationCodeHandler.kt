@@ -15,6 +15,7 @@ import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.time.DateTimeFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
+import me.yapoo.oauth.mixin.arrow.coEnsureNotNull
 import me.yapoo.oauth.mixin.spring.getSingle
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -39,10 +40,10 @@ class TokenAuthorizationCodeHandler(
     // RFC 6749 - 4.1.3, 4.1.4, 5.1, 5.2
     // 認可コードフローにおけるアクセストークン発行
     suspend fun handle(
-        request: ServerRequest
+        request: ServerRequest,
+        client: Client?
     ): Either<ServerResponse, ServerResponse> {
         return either {
-            // TODO : クライアント認証
             val body = request.awaitFormData()
             val code = body.getSingle("code")
                 .rightIfNotNull {
@@ -71,7 +72,7 @@ class TokenAuthorizationCodeHandler(
                         )
                     )
                 }.bind()
-            val client = clientRepository.findById(authorizationSession.clientId)
+            val authorizationCodeClient = clientRepository.findById(authorizationSession.clientId)
                 .rightIfNotNull {
                     ServerResponse.status(HttpStatus.NOT_FOUND).bodyValueAndAwait(
                         TokenErrorResponse(
@@ -81,12 +82,35 @@ class TokenAuthorizationCodeHandler(
                     )
                 }.bind()
             val clientId = body.getSingle("client_id")
-            when (client.type) {
+            when (authorizationCodeClient.type) {
                 Client.Type.Confidential -> {
-                    // TODO("認証情報と client の値の比較")
+                    coEnsureNotNull(client) {
+                        ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                            .headers {
+                                it.set("WWW-Authenticate", "Basic realm=\"oauth-server\"")
+                            }
+                            .bodyValueAndAwait(
+                                TokenErrorResponse(
+                                    TokenErrorResponse.ErrorCode.InvalidClient,
+                                    "failed client authentication"
+                                )
+                            )
+                    }
+                    coEnsure(
+                        client.id == authorizationCodeClient.id &&
+                                // RFC ではリクエストボディの `client_id` のチェックは特に求められてはいない
+                                (clientId == null || clientId == client.id.value)
+                    ) {
+                        ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
+                            TokenErrorResponse(
+                                TokenErrorResponse.ErrorCode.InvalidGrant,
+                                "invalid authorization code"
+                            )
+                        )
+                    }
                 }
                 Client.Type.Public -> {
-                    coEnsure(client.id.value == clientId) {
+                    coEnsure(authorizationCodeClient.id.value == clientId) {
                         ServerResponse.status(HttpStatus.UNAUTHORIZED).bodyValueAndAwait(
                             TokenErrorResponse(
                                 TokenErrorResponse.ErrorCode.InvalidClient,

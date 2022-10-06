@@ -7,11 +7,14 @@ import me.yapoo.oauth.domain.authorization.AccessToken
 import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.AuthorizationRepository
 import me.yapoo.oauth.domain.authorization.RefreshTokenRepository
+import me.yapoo.oauth.domain.client.Client
+import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.time.DateTimeFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
 import me.yapoo.oauth.mixin.spring.getSingle
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -25,16 +28,17 @@ class TokenRefreshTokenHandler(
     private val refreshTokenRepository: RefreshTokenRepository,
     private val dateTimeFactory: DateTimeFactory,
     private val secureStringFactory: SecureStringFactory,
+    private val clientRepository: ClientRepository,
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
     // RFC 6749 - 5.1, 5.2, 6
     // リフレッシュトークンによるアクセストークン更新
     suspend fun handle(
-        request: ServerRequest
+        request: ServerRequest,
+        client: Client?
     ): Either<ServerResponse, ServerResponse> {
         return either {
-            // TODO : クライアント認証
             val body = request.awaitFormData()
             val requestRefreshToken = body.getSingle("refresh_token")
                 .rightIfNotNull {
@@ -55,16 +59,6 @@ class TokenRefreshTokenHandler(
                         )
                     )
                 }.bind()
-            val now = dateTimeFactory.now()
-            coEnsure(!refreshToken.expired(now)) {
-                ServerResponse.badRequest().bodyValueAndAwait(
-                    TokenErrorResponse(
-                        TokenErrorResponse.ErrorCode.InvalidGrant,
-                        "refresh_token expired"
-                    )
-                )
-            }
-
             val authorization = authorizationRepository.findById(refreshToken.authorizationId)
                 .rightIfNotNull {
                     ServerResponse.badRequest().bodyValueAndAwait(
@@ -74,6 +68,40 @@ class TokenRefreshTokenHandler(
                         )
                     )
                 }.bind()
+            val refreshTokenClient = clientRepository.findById(authorization.clientId)
+                .rightIfNotNull {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "invalid refresh_token"
+                        )
+                    )
+                }.bind()
+            coEnsure(
+                refreshTokenClient.type == Client.Type.Public ||
+                        (client != null && client.id == authorization.clientId)
+            ) {
+                ServerResponse.status(HttpStatus.UNAUTHORIZED)
+                    .headers {
+                        it.set("WWW-Authenticate", "Basic realm=\"oauth-server\"")
+                    }
+                    .bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidClient,
+                            "failed client authentication"
+                        )
+                    )
+            }
+
+            val now = dateTimeFactory.now()
+            coEnsure(!refreshToken.expired(now)) {
+                ServerResponse.badRequest().bodyValueAndAwait(
+                    TokenErrorResponse(
+                        TokenErrorResponse.ErrorCode.InvalidGrant,
+                        "refresh_token expired"
+                    )
+                )
+            }
             val scopes = (body.getSingle("scope")?.split(" ")
                 ?: authorization.scopes)
                 .rightIfNotEmpty {

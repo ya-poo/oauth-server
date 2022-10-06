@@ -7,6 +7,7 @@ import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
 import me.yapoo.oauth.mixin.spring.getSingle
+import me.yapoo.oauth.router.authentication.ClientAuthenticator
 import me.yapoo.oauth.router.error.handleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,6 +24,7 @@ class Router(
     private val authenticationHandler: AuthenticationHandler,
     private val tokenRefreshTokenHandler: TokenRefreshTokenHandler,
     private val tokenAuthorizationCodeHandler: TokenAuthorizationCodeHandler,
+    private val clientAuthenticator: ClientAuthenticator,
 ) {
 
     @Bean
@@ -34,9 +36,11 @@ class Router(
             authenticationHandler.handle(it).merge()
         }
         POST("/token") {
+            val client = clientAuthenticator.doAuthentication(it)
+
             when (it.awaitFormData().getSingle("grant_type")) {
-                "authorization_code" -> tokenAuthorizationCodeHandler.handle(it).merge()
-                "refresh_token" -> tokenRefreshTokenHandler.handle(it).merge()
+                "authorization_code" -> tokenAuthorizationCodeHandler.handle(it, client).merge()
+                "refresh_token" -> tokenRefreshTokenHandler.handle(it, client).merge()
                 else -> ServerResponse.badRequest().bodyValueAndAwait(
                     TokenErrorResponse(
                         TokenErrorResponse.ErrorCode.UnsupportedGrantType,
@@ -45,6 +49,7 @@ class Router(
                 )
             }
         }
+
         handleException(logger)
     }
 
