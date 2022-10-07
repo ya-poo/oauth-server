@@ -4,20 +4,19 @@ import me.yapoo.oauth.domain.authorization.session.AuthorizationSession
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionId
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
 import org.springframework.stereotype.Component
-import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class AuthorizationSessionRepositoryImpl : AuthorizationSessionRepository {
 
-    private val data = ConcurrentHashMap<AuthorizationSessionId, AuthorizationSession>()
+    private val list = mutableListOf<AuthorizationSession>()
 
     override suspend fun add(session: AuthorizationSession) {
-        data[session.id] = session
+        list.add(session)
     }
 
     override suspend fun findById(
         id: AuthorizationSessionId
     ): AuthorizationSession? {
-        return data[id]
+        return list.singleOrNull { it.id == id }
     }
 }
