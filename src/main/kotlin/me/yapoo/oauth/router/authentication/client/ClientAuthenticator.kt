@@ -1,4 +1,4 @@
-package me.yapoo.oauth.router.authentication
+package me.yapoo.oauth.router.authentication.client
 
 import arrow.core.continuations.nullable
 import me.yapoo.oauth.domain.client.Client

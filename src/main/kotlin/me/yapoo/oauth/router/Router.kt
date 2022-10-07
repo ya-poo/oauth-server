@@ -8,7 +8,7 @@ import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
 import me.yapoo.oauth.mixin.spring.getSingle
-import me.yapoo.oauth.router.authentication.ClientAuthenticator
+import me.yapoo.oauth.router.authentication.client.ClientAuthenticator
 import me.yapoo.oauth.router.error.handleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

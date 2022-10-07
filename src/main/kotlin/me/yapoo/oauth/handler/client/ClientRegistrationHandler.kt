@@ -8,8 +8,8 @@ import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.UuidFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
-import me.yapoo.oauth.router.authentication.ClientCredential
-import me.yapoo.oauth.router.authentication.ClientCredentialRepository
+import me.yapoo.oauth.router.authentication.client.ClientCredential
+import me.yapoo.oauth.router.authentication.client.ClientCredentialRepository
 import me.yapoo.oauth.router.error.ErrorCode
 import me.yapoo.oauth.router.error.ErrorResponse
 import org.springframework.stereotype.Service
