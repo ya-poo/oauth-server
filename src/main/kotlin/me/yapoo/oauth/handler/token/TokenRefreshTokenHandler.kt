@@ -10,7 +10,7 @@ import me.yapoo.oauth.domain.authorization.RefreshTokenRepository
 import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
-import me.yapoo.oauth.infrastructure.time.DateTimeFactory
+import me.yapoo.oauth.infrastructure.time.SystemClock
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
 import me.yapoo.oauth.mixin.spring.getSingle
@@ -26,7 +26,7 @@ class TokenRefreshTokenHandler(
     private val authorizationRepository: AuthorizationRepository,
     private val accessTokenRepository: AccessTokenRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val dateTimeFactory: DateTimeFactory,
+    private val systemClock: SystemClock,
     private val secureStringFactory: SecureStringFactory,
     private val clientRepository: ClientRepository,
 ) {
@@ -93,7 +93,7 @@ class TokenRefreshTokenHandler(
                     )
             }
 
-            val now = dateTimeFactory.now()
+            val now = systemClock.now()
             coEnsure(!refreshToken.expired(now)) {
                 ServerResponse.badRequest().bodyValueAndAwait(
                     TokenErrorResponse(

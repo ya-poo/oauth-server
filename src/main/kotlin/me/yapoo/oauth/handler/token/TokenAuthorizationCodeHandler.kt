@@ -13,7 +13,7 @@ import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepositor
 import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
-import me.yapoo.oauth.infrastructure.time.DateTimeFactory
+import me.yapoo.oauth.infrastructure.time.SystemClock
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.coEnsureNotNull
 import me.yapoo.oauth.mixin.spring.getSingle
@@ -32,7 +32,7 @@ class TokenAuthorizationCodeHandler(
     private val accessTokenRepository: AccessTokenRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val clientRepository: ClientRepository,
-    private val dateTimeFactory: DateTimeFactory,
+    private val systemClock: SystemClock,
     private val secureStringFactory: SecureStringFactory,
 ) {
 
@@ -133,7 +133,7 @@ class TokenAuthorizationCodeHandler(
                 )
             }
 
-            val now = dateTimeFactory.now()
+            val now = systemClock.now()
             coEnsure(!authorizationCode.isExpired(now)) {
                 ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
                     TokenErrorResponse(

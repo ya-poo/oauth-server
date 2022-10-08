@@ -13,7 +13,7 @@ import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepositor
 import me.yapoo.oauth.domain.user.UserCredentialRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.random.UuidFactory
-import me.yapoo.oauth.infrastructure.time.DateTimeFactory
+import me.yapoo.oauth.infrastructure.time.SystemClock
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.router.error.ErrorCode
 import me.yapoo.oauth.router.error.ErrorResponse
@@ -33,7 +33,7 @@ class AuthenticationHandler(
     private val authorizationRepository: AuthorizationRepository,
     private val authorizationCodeRepository: AuthorizationCodeRepository,
     private val secureStringFactory: SecureStringFactory,
-    private val dateTimeFactory: DateTimeFactory,
+    private val systemClock: SystemClock,
     private val uuidFactory: UuidFactory,
 ) {
 
@@ -72,7 +72,7 @@ class AuthenticationHandler(
                     )
                 )
             }
-            val now = dateTimeFactory.now()
+            val now = systemClock.now()
             val authorizationId = AuthorizationId.new(uuidFactory)
             val authorization = Authorization.new(
                 id = authorizationId,

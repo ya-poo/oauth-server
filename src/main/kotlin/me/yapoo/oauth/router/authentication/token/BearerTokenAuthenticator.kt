@@ -6,7 +6,7 @@ import arrow.core.rightIfNotNull
 import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.Authorization
 import me.yapoo.oauth.domain.authorization.AuthorizationRepository
-import me.yapoo.oauth.infrastructure.time.DateTimeFactory
+import me.yapoo.oauth.infrastructure.time.SystemClock
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -18,7 +18,7 @@ import org.springframework.web.reactive.function.server.buildAndAwait
 class BearerTokenAuthenticator(
     private val accessTokenRepository: AccessTokenRepository,
     private val authorizationRepository: AuthorizationRepository,
-    private val dateTimeFactory: DateTimeFactory,
+    private val systemClock: SystemClock,
 ) {
 
     // Bearer トークン認証 (RFC 6750 - 2.1, 3)
@@ -57,7 +57,7 @@ class BearerTokenAuthenticator(
                         .buildAndAwait()
                 }.bind()
 
-            val now = dateTimeFactory.now()
+            val now = systemClock.now()
             coEnsure(!token.expired(now)) {
                 ServerResponse.status(HttpStatus.UNAUTHORIZED)
                     .header(

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import java.time.Instant
 
 @Component
-class DateTimeFactory {
+class SystemClock {
 
     fun now(): Instant {
         return Instant.now()
