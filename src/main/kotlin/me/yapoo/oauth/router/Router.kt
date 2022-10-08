@@ -1,5 +1,6 @@
 package me.yapoo.oauth.router
 
+import arrow.core.continuations.either
 import arrow.core.merge
 import me.yapoo.oauth.handler.authentication.AuthenticationHandler
 import me.yapoo.oauth.handler.authorization.AuthorizationHandler
@@ -9,6 +10,7 @@ import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
 import me.yapoo.oauth.mixin.spring.getSingle
 import me.yapoo.oauth.router.authentication.client.ClientAuthenticator
+import me.yapoo.oauth.router.authentication.token.BearerTokenAuthenticator
 import me.yapoo.oauth.router.error.handleException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,6 +29,7 @@ class Router(
     private val tokenAuthorizationCodeHandler: TokenAuthorizationCodeHandler,
     private val clientAuthenticator: ClientAuthenticator,
     private val clientRegistrationHandler: ClientRegistrationHandler,
+    private val bearerTokenAuthenticator: BearerTokenAuthenticator,
 ) {
 
     @Bean
@@ -53,6 +56,19 @@ class Router(
                     )
                 )
             }
+        }
+        GET("/hello") {
+            either {
+                bearerTokenAuthenticator.doAuthentication(it, listOf("hello")).bind()
+
+                ServerResponse.ok()
+                    .bodyValueAndAwait(
+                        mapOf(
+                            "language" to "日本語",
+                            "value" to "こんにちは"
+                        )
+                    )
+            }.merge()
         }
 
         handleException(logger)

@@ -15,4 +15,10 @@ class AccessTokenRepositoryImpl : AccessTokenRepository {
         list.removeIf { it.value == accessToken.value }
         list.add(accessToken)
     }
+
+    override suspend fun findByToken(
+        token: String
+    ): AccessToken? {
+        return list.singleOrNull { it.value == token }
+    }
 }

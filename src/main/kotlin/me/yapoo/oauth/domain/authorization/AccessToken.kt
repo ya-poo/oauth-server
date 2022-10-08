@@ -12,6 +12,9 @@ data class AccessToken(
 
     val expiresIn: Duration = Duration.ofMinutes(30)
 
+    fun expired(now: Instant) =
+        issuedAt + expiresIn < now
+
     companion object {
         private const val TOKEN_LENGTH = 30
 
