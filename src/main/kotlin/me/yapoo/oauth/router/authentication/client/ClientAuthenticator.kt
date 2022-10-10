@@ -28,9 +28,9 @@ class ClientAuthenticator(
 
             ensure(authorizationHeaderValue.startsWith("Basic "))
 
-            val list = authorizationHeaderValue.substring(6)
-                .let { Base64.getDecoder().decode(it).toString() }
-                .split(":")
+            val list = String(
+                Base64.getDecoder().decode(authorizationHeaderValue.substringAfter("Basic "))
+            ).split(":")
 
             ensure(list.size == 2)
 
