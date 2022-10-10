@@ -2,6 +2,7 @@ package me.yapoo.oauth.router.authentication.client
 
 import com.password4j.Password
 import me.yapoo.oauth.domain.client.ClientId
+import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 
 data class ClientCredential(
     val id: ClientId,
@@ -19,6 +20,8 @@ data class ClientCredential(
     }
 
     companion object {
+        const val CREDENTIAL_LENGTH = 30
+
         fun new(
             id: ClientId,
             plainCredential: String,

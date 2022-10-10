@@ -5,6 +5,7 @@ import arrow.core.continuations.either
 import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientId
 import me.yapoo.oauth.domain.client.ClientRepository
+import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.random.UuidFactory
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.rightIfNotEmpty
@@ -17,13 +18,13 @@ import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.awaitBody
 import org.springframework.web.reactive.function.server.bodyValueAndAwait
-import org.springframework.web.reactive.function.server.buildAndAwait
 
 @Service
 class ClientRegistrationHandler(
     private val clientRepository: ClientRepository,
     private val clientCredentialRepository: ClientCredentialRepository,
     private val uuidFactory: UuidFactory,
+    private val secureStringFactory: SecureStringFactory,
 ) {
 
     suspend fun handle(
@@ -45,15 +46,6 @@ class ClientRegistrationHandler(
                 "confidential" -> Client.Type.Confidential
                 else -> Client.Type.Public
             }
-            coEnsure(clientRepository.findById(ClientId(body.clientId)) == null) {
-                ServerResponse.badRequest()
-                    .bodyValueAndAwait(
-                        ErrorResponse(
-                            ErrorCode.BAD_REQUEST.value,
-                            "already used client_id"
-                        )
-                    )
-            }
             // TODO: まだスコープを定義していないので、スコープの値のバリデーションはせず、non-empty だけを見ておく。
             val scopes = body.scopes
                 .rightIfNotEmpty {
@@ -65,7 +57,7 @@ class ClientRegistrationHandler(
                             )
                         )
                 }.bind()
-            val redirectUri = body.redirectUri
+            val redirectUri = body.redirectUris
                 .rightIfNotEmpty {
                     ServerResponse.badRequest()
                         .bodyValueAndAwait(
@@ -83,13 +75,21 @@ class ClientRegistrationHandler(
                 redirectUris = redirectUri,
                 type = type
             )
-            clientRepository.save(client)
-            clientCredentialRepository.save(
-                ClientCredential.new(client.id, body.clientSecret)
-            )
+            clientRepository.add(client)
+            val plainCredential = secureStringFactory.next(ClientCredential.CREDENTIAL_LENGTH)
+            val clientCredential = ClientCredential.new(client.id, plainCredential)
+            clientCredentialRepository.add(clientCredential)
 
             ServerResponse.ok()
-                .buildAndAwait()
+                .bodyValueAndAwait(
+                    RegisterClientResponse(
+                        name = client.name,
+                        clientId = client.id.value,
+                        clientSecret = plainCredential,
+                        scopes = scopes,
+                        redirectUris = redirectUri
+                    )
+                )
         }
     }
 }

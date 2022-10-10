@@ -25,7 +25,7 @@ class ClientRepositoryImpl : ClientRepository {
         )
     )
 
-    override suspend fun save(
+    override suspend fun add(
         client: Client
     ) {
         list.add(client)

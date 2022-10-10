@@ -20,7 +20,7 @@ class ClientCredentialRepositoryImpl : ClientCredentialRepository {
         }
     )
 
-    override suspend fun save(
+    override suspend fun add(
         credential: ClientCredential
     ) {
         list.add(credential)

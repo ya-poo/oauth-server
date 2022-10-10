@@ -1,8 +1,9 @@
 package me.yapoo.oauth.handler.client
 
-data class RegisterClientRequest(
-    val type: String,
+data class RegisterClientResponse(
     val name: String,
+    val clientId: String,
+    val clientSecret: String,
     val scopes: List<String>,
     val redirectUris: List<String>,
 )

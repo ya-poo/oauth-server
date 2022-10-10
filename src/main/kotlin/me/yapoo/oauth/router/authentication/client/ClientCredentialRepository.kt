@@ -4,7 +4,7 @@ import me.yapoo.oauth.domain.client.ClientId
 
 interface ClientCredentialRepository {
 
-    suspend fun save(
+    suspend fun add(
         credential: ClientCredential
     )
 
