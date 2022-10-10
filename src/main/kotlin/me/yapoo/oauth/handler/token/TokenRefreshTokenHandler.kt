@@ -92,6 +92,15 @@ class TokenRefreshTokenHandler(
                         )
                     )
             }
+            val accessToken = accessTokenRepository.findByAuthorizationId(authorization.id)
+                .rightIfNotNull {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "invalid refresh_token"
+                        )
+                    )
+                }.bind()
 
             val now = systemClock.now()
             coEnsure(!refreshToken.expired(now)) {
@@ -120,14 +129,17 @@ class TokenRefreshTokenHandler(
                     )
                 )
             }
-            authorizationRepository.save(
+
+            authorizationRepository.update(
                 authorization.copy(scopes = scopes)
             )
             val nextRefreshToken = refreshToken.next(secureStringFactory, now)
-            refreshTokenRepository.save(nextRefreshToken)
+            refreshTokenRepository.delete(refreshToken.value)
+            refreshTokenRepository.add(nextRefreshToken)
 
-            val accessToken = AccessToken.new(secureStringFactory, authorization.id, now)
-            accessTokenRepository.save(accessToken)
+            val nextAccessToken = AccessToken.new(secureStringFactory, authorization.id, now)
+            accessTokenRepository.delete(accessToken.value)
+            accessTokenRepository.add(nextAccessToken)
 
             ServerResponse.ok()
                 .headers {
@@ -136,9 +148,9 @@ class TokenRefreshTokenHandler(
                 }
                 .bodyValueAndAwait(
                     TokenResponse(
-                        accessToken = accessToken.value,
-                        expiresIn = accessToken.expiresIn.seconds.toInt(),
-                        refreshToken = refreshToken.value,
+                        accessToken = nextAccessToken.value,
+                        expiresIn = nextAccessToken.expiresIn.seconds.toInt(),
+                        refreshToken = nextAccessToken.value,
                         scope = scopes
                     )
                 )

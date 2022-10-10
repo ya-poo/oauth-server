@@ -9,10 +9,9 @@ class RefreshTokenRepositoryImpl : RefreshTokenRepository {
 
     private val list = mutableListOf<RefreshToken>()
 
-    override suspend fun save(
+    override suspend fun add(
         refreshToken: RefreshToken
     ) {
-        list.removeIf { it.value == refreshToken.value }
         list.add(refreshToken)
     }
 
@@ -20,5 +19,11 @@ class RefreshTokenRepositoryImpl : RefreshTokenRepository {
         refreshToken: String
     ): RefreshToken? {
         return list.singleOrNull { it.value == refreshToken }
+    }
+
+    override suspend fun delete(
+        refreshToken: String
+    ) {
+        list.removeIf { it.value == refreshToken }
     }
 }

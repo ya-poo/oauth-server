@@ -80,7 +80,7 @@ class AuthenticationHandler(
                 clientId = authorizationSession.clientId,
                 scopes = authorizationSession.scopes,
             )
-            authorizationRepository.save(authorization)
+            authorizationRepository.add(authorization)
 
             val authorizationCode = AuthorizationCode.new(
                 secureStringFactory,

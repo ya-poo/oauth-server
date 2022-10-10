@@ -158,13 +158,13 @@ class TokenAuthorizationCodeHandler(
                 authorizationCode.authorizationId,
                 now
             )
-            accessTokenRepository.save(accessToken)
+            accessTokenRepository.add(accessToken)
             val refreshToken = RefreshToken.new(
                 secureStringFactory,
                 authorizationCode.authorizationId,
                 now
             )
-            refreshTokenRepository.save(refreshToken)
+            refreshTokenRepository.add(refreshToken)
 
             // RFC 6749 - 5.1
             ServerResponse.ok()

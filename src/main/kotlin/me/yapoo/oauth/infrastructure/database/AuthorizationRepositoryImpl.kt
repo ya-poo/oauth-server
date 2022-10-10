@@ -10,10 +10,9 @@ class AuthorizationRepositoryImpl : AuthorizationRepository {
 
     private val list = mutableListOf<Authorization>()
 
-    override suspend fun save(
+    override suspend fun add(
         authorization: Authorization
     ) {
-        list.removeIf { it.id == authorization.id }
         list.add(authorization)
     }
 
@@ -22,4 +21,12 @@ class AuthorizationRepositoryImpl : AuthorizationRepository {
     ): Authorization? {
         return list.singleOrNull { it.id == id }
     }
+
+    override suspend fun update(
+        authorization: Authorization
+    ) {
+        list.removeIf { it.id == authorization.id }
+        list.add(authorization)
+    }
+
 }
