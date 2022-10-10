@@ -71,6 +71,20 @@ class Router(
             }.merge()
         }
 
+        GET("/world") {
+            either {
+                bearerTokenAuthenticator.doAuthentication(it, listOf("world")).bind()
+
+                ServerResponse.ok()
+                    .bodyValueAndAwait(
+                        mapOf(
+                            "language" to "日本語",
+                            "value" to "世界"
+                        )
+                    )
+            }.merge()
+        }
+
         handleException(logger)
     }
 

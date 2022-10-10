@@ -15,7 +15,7 @@ class UserCredentialRepositoryImpl : UserCredentialRepository {
                 .addRandomSalt()
                 .withPBKDF2()
             UserCredential(
-                id = UserSubject("id"),
+                id = UserSubject("test-user-id"),
                 email = "test@example.com",
                 passwordHash = password.result,
                 salt = password.salt
