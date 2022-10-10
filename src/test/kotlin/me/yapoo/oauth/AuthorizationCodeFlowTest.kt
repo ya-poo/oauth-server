@@ -17,7 +17,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.web.reactive.function.BodyInserters
-import java.net.URI
 import java.util.*
 
 @SpringBootTest
@@ -49,8 +48,8 @@ class AuthorizationCodeFlowTest {
                 .queryParam("response_type", "code")
                 .queryParam("scope", "hello")
                 .build()
-        }.exchange().expectBody<Unit>().returnResult().responseHeaders["Location"]?.singleOrNull()!!
-        val asi = URI.create(authorizationResponseLocation).queryParams["asi"]?.singleOrNull()!!
+        }.exchange().expectBody<Unit>().returnResult().responseHeaders.location!!
+        val asi = authorizationResponseLocation.queryParams["asi"]?.singleOrNull()!!
 
         val authenticationResponseLocation = webTestClient.post().uri("/authentication")
             .bodyValue(
@@ -59,8 +58,7 @@ class AuthorizationCodeFlowTest {
                     email = "test@example.com",
                     password = "password"
                 )
-            ).exchange().expectBody<Unit>().returnResult().responseHeaders["Location"]?.singleOrNull()!!
-            .let(URI::create)
+            ).exchange().expectBody<Unit>().returnResult().responseHeaders.location!!
         val code = authenticationResponseLocation.queryParams["code"]?.singleOrNull()!!
         assertEquals(state, authenticationResponseLocation.queryParams["state"]?.singleOrNull())
 
@@ -95,36 +93,6 @@ class AuthorizationCodeFlowTest {
                     assertTrue(it.contains("error=\"insufficient_scope\""))
                     assertTrue(it.contains("scope=world"))
                 }
-            }
-
-        val refreshTokenResponse = webTestClient.post().uri("/token")
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .headers {
-                it.setBasicAuth(client.clientId, client.clientSecret)
-            }
-            .body(
-                BodyInserters
-                    .fromFormData("grant_type", "refresh_token")
-                    .with("refresh_token", tokenResponse.refreshToken)
-            ).exchange().expectBody<TokenResponse>().returnResult().responseBody!!
-
-        webTestClient.get().uri("/hello")
-            .headers {
-                it.setBearerAuth(tokenResponse.accessToken)
-            }.exchange().apply {
-                expectStatus().isUnauthorized
-                expectHeader().values("WWW-Authenticate") {
-                    assertTrue(it.contains("Bearer realm=\"oauth-server\""))
-                    assertTrue(it.contains("error=\"invalid_token\""))
-                }
-            }
-
-        webTestClient.get().uri("/hello")
-            .headers {
-                it.setBearerAuth(refreshTokenResponse.accessToken)
-            }.exchange().apply {
-                expectStatus().isOk
-                expectBody().json("""{"language":"日本語", "value":"こんにちは"}""")
             }
     }
 }
