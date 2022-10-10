@@ -98,8 +98,8 @@ class TokenAuthorizationCodeHandler(
                     }
                     coEnsure(
                         client.id == authorizationCodeClient.id &&
-                                // RFC ではリクエストボディの `client_id` のチェックは特に求められてはいない
-                                (clientId == null || clientId == client.id.value)
+                            // RFC ではリクエストボディの `client_id` のチェックは特に求められてはいない
+                            (clientId == null || clientId == client.id.value)
                     ) {
                         ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
                             TokenErrorResponse(
@@ -123,7 +123,7 @@ class TokenAuthorizationCodeHandler(
             val redirectUri = body.getSingle("redirect_uri")
             coEnsure(
                 !authorizationSession.redirectUriSpecified ||
-                        authorizationSession.redirectUri == redirectUri
+                    authorizationSession.redirectUri == redirectUri
             ) {
                 ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
                     TokenErrorResponse(

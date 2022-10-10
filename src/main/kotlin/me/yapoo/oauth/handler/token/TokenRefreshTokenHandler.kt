@@ -79,7 +79,7 @@ class TokenRefreshTokenHandler(
                 }.bind()
             coEnsure(
                 refreshTokenClient.type == Client.Type.Public ||
-                        (client != null && client.id == authorization.clientId)
+                    (client != null && client.id == authorization.clientId)
             ) {
                 ServerResponse.status(HttpStatus.UNAUTHORIZED)
                     .headers {
@@ -111,8 +111,10 @@ class TokenRefreshTokenHandler(
                     )
                 )
             }
-            val scopes = (body.getSingle("scope")?.split(" ")
-                ?: authorization.scopes)
+            val scopes = (
+                body.getSingle("scope")?.split(" ")
+                    ?: authorization.scopes
+                )
                 .rightIfNotEmpty {
                     ServerResponse.badRequest().bodyValueAndAwait(
                         TokenErrorResponse(

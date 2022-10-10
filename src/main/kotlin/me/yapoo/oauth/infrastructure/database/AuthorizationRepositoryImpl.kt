@@ -28,5 +28,4 @@ class AuthorizationRepositoryImpl : AuthorizationRepository {
         list.removeIf { it.id == authorization.id }
         list.add(authorization)
     }
-
 }

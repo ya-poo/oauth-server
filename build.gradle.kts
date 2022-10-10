@@ -5,6 +5,8 @@ plugins {
     id("org.springframework.boot") version "2.7.3"
     id("io.spring.dependency-management") version "1.0.14.RELEASE"
     id("org.flywaydb.flyway") version "8.4.3"
+    id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
+
     kotlin("jvm") version "1.7.20"
     kotlin("plugin.spring") version "1.7.20"
 }
@@ -25,9 +27,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("io.arrow-kt:arrow-core:1.1.2")
     implementation("com.password4j:password4j:1.6.0")
-//	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
-//	runtimeOnly("org.postgresql:postgresql")
-//	runtimeOnly("org.postgresql:r2dbc-postgresql")
+// 	implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
+// 	runtimeOnly("org.postgresql:postgresql")
+// 	runtimeOnly("org.postgresql:r2dbc-postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
 }
@@ -45,6 +47,10 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+ktlint {
+    disabledRules.set(setOf("no-wildcard-imports"))
 }
 
 flyway {

@@ -107,7 +107,7 @@ class AuthorizationCodeFlowTest {
                     .fromFormData("grant_type", "refresh_token")
                     .with("refresh_token", tokenResponse.refreshToken)
             ).exchange().expectBody<TokenResponse>().returnResult().responseBody!!
-        
+
         webTestClient.get().uri("/hello")
             .headers {
                 it.setBearerAuth(tokenResponse.accessToken)

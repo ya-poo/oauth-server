@@ -96,9 +96,11 @@ class AuthorizationHandler(
             }
             // RFC 6749 - 3.3
             // ここでは `scope` の省略は許可しないことにする。
-            val scopes = (request.queryParamOrNull("scope")
-                ?.split(" ")
-                ?: emptyList())
+            val scopes = (
+                request.queryParamOrNull("scope")
+                    ?.split(" ")
+                    ?: emptyList()
+                )
                 .rightIfNotEmpty {
                     ErrorRedirectResponse(
                         redirectUri,

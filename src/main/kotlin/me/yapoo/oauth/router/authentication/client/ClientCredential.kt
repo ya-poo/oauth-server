@@ -2,7 +2,6 @@ package me.yapoo.oauth.router.authentication.client
 
 import com.password4j.Password
 import me.yapoo.oauth.domain.client.ClientId
-import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 
 data class ClientCredential(
     val id: ClientId,
