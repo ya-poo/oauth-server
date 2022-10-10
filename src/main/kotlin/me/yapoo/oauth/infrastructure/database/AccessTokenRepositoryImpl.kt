@@ -33,4 +33,10 @@ class AccessTokenRepositoryImpl : AccessTokenRepository {
     ) {
         list.removeIf { it.value == token }
     }
+
+    override suspend fun deleteByAuthorizationId(
+        id: AuthorizationId
+    ) {
+        list.removeIf { it.authorizationId == id }
+    }
 }

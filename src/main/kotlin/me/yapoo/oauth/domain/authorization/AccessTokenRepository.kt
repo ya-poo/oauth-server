@@ -9,4 +9,6 @@ interface AccessTokenRepository {
     suspend fun findByAuthorizationId(id: AuthorizationId): AccessToken?
 
     suspend fun delete(token: String)
+
+    suspend fun deleteByAuthorizationId(id: AuthorizationId)
 }

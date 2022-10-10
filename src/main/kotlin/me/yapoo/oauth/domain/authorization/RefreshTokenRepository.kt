@@ -11,4 +11,8 @@ interface RefreshTokenRepository {
     suspend fun delete(
         refreshToken: String
     )
+
+    suspend fun deleteByAuthorizationId(
+        id: AuthorizationId
+    )
 }

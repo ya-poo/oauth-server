@@ -5,6 +5,7 @@ import arrow.core.merge
 import me.yapoo.oauth.handler.authentication.AuthenticationHandler
 import me.yapoo.oauth.handler.authorization.AuthorizationHandler
 import me.yapoo.oauth.handler.client.ClientRegistrationHandler
+import me.yapoo.oauth.handler.revoke.TokenRevocationHandler
 import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
@@ -30,6 +31,7 @@ class Router(
     private val clientAuthenticator: ClientAuthenticator,
     private val clientRegistrationHandler: ClientRegistrationHandler,
     private val bearerTokenAuthenticator: BearerTokenAuthenticator,
+    private val tokenRevocationHandler: TokenRevocationHandler,
 ) {
 
     @Bean
@@ -56,6 +58,11 @@ class Router(
                     )
                 )
             }
+        }
+        POST("/revoke") {
+            val client = clientAuthenticator.doAuthentication(it)
+
+            tokenRevocationHandler.handle(it, client).merge()
         }
         GET("/hello") {
             either {

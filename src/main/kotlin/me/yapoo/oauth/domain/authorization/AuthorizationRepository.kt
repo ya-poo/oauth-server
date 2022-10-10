@@ -9,4 +9,6 @@ interface AuthorizationRepository {
     suspend fun update(
         authorization: Authorization
     )
+
+    suspend fun delete(id: AuthorizationId)
 }

@@ -28,4 +28,10 @@ class AuthorizationRepositoryImpl : AuthorizationRepository {
         list.removeIf { it.id == authorization.id }
         list.add(authorization)
     }
+
+    override suspend fun delete(
+        id: AuthorizationId
+    ) {
+        list.removeIf { it.id == id }
+    }
 }

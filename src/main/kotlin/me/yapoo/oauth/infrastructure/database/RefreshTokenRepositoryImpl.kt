@@ -1,5 +1,6 @@
 package me.yapoo.oauth.infrastructure.database
 
+import me.yapoo.oauth.domain.authorization.AuthorizationId
 import me.yapoo.oauth.domain.authorization.RefreshToken
 import me.yapoo.oauth.domain.authorization.RefreshTokenRepository
 import org.springframework.stereotype.Repository
@@ -25,5 +26,11 @@ class RefreshTokenRepositoryImpl : RefreshTokenRepository {
         refreshToken: String
     ) {
         list.removeIf { it.value == refreshToken }
+    }
+
+    override suspend fun deleteByAuthorizationId(
+        id: AuthorizationId
+    ) {
+        list.removeIf { it.authorizationId == id }
     }
 }
