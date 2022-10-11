@@ -27,6 +27,8 @@ class ClientRegistrationHandler(
     private val secureStringFactory: SecureStringFactory,
 ) {
 
+    // クライアント登録エンドポイント
+    // TODO: RFC 7591 に基づいて実装し直す。
     suspend fun handle(
         request: ServerRequest
     ): Either<ServerResponse, ServerResponse> {

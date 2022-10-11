@@ -7,6 +7,10 @@ import me.yapoo.oauth.handler.client.RegisterClientRequest
 import me.yapoo.oauth.handler.client.RegisterClientResponse
 import me.yapoo.oauth.handler.token.TokenResponse
 import me.yapoo.oauth.mixin.queryParams
+import me.yapoo.oauth.request.authenticate
+import me.yapoo.oauth.request.authorization
+import me.yapoo.oauth.request.registerClient
+import me.yapoo.oauth.request.tokenAuthorizationCode
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -94,5 +98,36 @@ class AuthorizationCodeFlowTest {
                     assertTrue(it.contains("scope=world"))
                 }
             }
+    }
+
+    @Test
+    fun `パブリッククライアントの PKCE を利用した認可コードフロー`() {
+        val client = webTestClient.registerClient(
+            type = "public"
+        ).expectBody<RegisterClientResponse>().returnResult().responseBody!!
+
+        val codeVerifier = "test-code-verifier"
+        val codeChallenge = "d052c829a86b5fb92ac67730855e560fcda5bbfc22e4603c16c4522ee6da3a95"
+
+        val authorizationResponseLocation = webTestClient.authorization(
+            clientId = client.clientId,
+            redirectUri = client.redirectUris.first(),
+            codeChallenge = codeChallenge,
+            codeChallengeMethod = "S256"
+        ).expectBody<Unit>().returnResult().responseHeaders.location!!
+        val asi = authorizationResponseLocation.queryParams["asi"]?.singleOrNull()!!
+
+        val authenticationResponseLocation = webTestClient
+            .authenticate(asi = asi)
+            .expectBody<Unit>().returnResult().responseHeaders.location!!
+        val code = authenticationResponseLocation.queryParams["code"]?.singleOrNull()!!
+
+        webTestClient.tokenAuthorizationCode(
+            clientId = client.clientId,
+            clientSecret = client.clientSecret,
+            code = code,
+            redirectUri = client.redirectUris.first(),
+            codeVerifier = codeVerifier
+        ).expectBody<TokenResponse>().returnResult().responseBody!!
     }
 }

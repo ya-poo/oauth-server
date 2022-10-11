@@ -37,8 +37,8 @@ class TokenAuthorizationCodeHandler(
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
-    // RFC 6749 - 4.1.3, 4.1.4, 5.1, 5.2
-    // 認可コードフローにおけるアクセストークン発行
+    // 認可コードフローにおけるアクセストークン発行 (RFC 6749 - 4.1.3, 4.1.4, 5.1, 5.2)
+    // PKCE 検証 (RFC 7636)
     suspend fun handle(
         request: ServerRequest,
         client: Client?
@@ -65,13 +65,25 @@ class TokenAuthorizationCodeHandler(
                 }.bind()
             val authorizationSession = authorizationSessionRepository.findById(authorizationCode.authorizationSessionId)
                 .rightIfNotNull {
-                    ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR).bodyValueAndAwait(
+                    ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
                         TokenErrorResponse(
-                            TokenErrorResponse.ErrorCode.InternalServerError,
-                            "please retry later"
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "expired authorization code"
                         )
                     )
                 }.bind()
+            val codeVerifier = body.getSingle("code_verifier")
+            if (authorizationSession.proofKey != null) {
+                coEnsure(codeVerifier != null && authorizationSession.proofKey.accepts(codeVerifier)) {
+                    ServerResponse.badRequest().bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidGrant,
+                            "invalid code_verifier value"
+                        )
+                    )
+                }
+            }
+
             val authorizationCodeClient = clientRepository.findById(authorizationSession.clientId)
                 .rightIfNotNull {
                     ServerResponse.status(HttpStatus.NOT_FOUND).bodyValueAndAwait(

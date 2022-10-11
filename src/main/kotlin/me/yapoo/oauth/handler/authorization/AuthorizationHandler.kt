@@ -3,10 +3,12 @@ package me.yapoo.oauth.handler.authorization
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
+import me.yapoo.oauth.domain.authorization.ProofKey
 import me.yapoo.oauth.domain.authorization.State
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSession
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionId
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
+import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientId
 import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
@@ -33,6 +35,7 @@ class AuthorizationHandler(
 
     // 認可エンドポイント (RFC 6749 - 3.1)
     // 現在は認可コードフロー (RFC 6749 - 4.1) のみ対応
+    // Proof Key for Code Exchange (RFC 7636) に対応。
     // TODO : いくつかのリクエスト値の値のフォーマット (文字種) の検査
     suspend fun handle(
         request: ServerRequest
@@ -118,13 +121,42 @@ class AuthorizationHandler(
                 )
             }
 
+            val codeChallenge = request.queryParamOrNull("code_challenge")
+            val codeChallengeMethod = request.queryParamOrNull("code_challenge_method")
+            val proofKey = if (codeChallenge != null) {
+                ProofKey.of(codeChallenge, codeChallengeMethod)
+                    .mapLeft {
+                        // RFC 7636 4.4.1
+                        ErrorRedirectResponse(
+                            redirectUri,
+                            AuthorizationErrorCode.InvalidRequest,
+                            "code_challenge_method must be plain or S256",
+                            state
+                        )
+                    }.bind()
+            } else null
+
+            // ここではパブリッククライアントは PKCE を必須とする。
+            if (client.type == Client.Type.Public) {
+                coEnsure(proofKey != null) {
+                    // RFC 7636 4.4.1
+                    ErrorRedirectResponse(
+                        redirectUri,
+                        AuthorizationErrorCode.InvalidRequest,
+                        "code_challenge must be specified",
+                        state
+                    )
+                }
+            }
+
             val authorizationSession = AuthorizationSession(
                 id = AuthorizationSessionId.next(secureStringFactory),
                 clientId = clientId,
                 redirectUri = redirectUri,
                 scopes = scopes,
                 state = state,
-                redirectUriSpecified = request.queryParamOrNull("redirect_uri") != null
+                redirectUriSpecified = request.queryParamOrNull("redirect_uri") != null,
+                proofKey = proofKey
             )
             authorizationSessionRepository.add(authorizationSession)
 
