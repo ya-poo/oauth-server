@@ -3,16 +3,12 @@ package me.yapoo.oauth.handler.authentication
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
-import me.yapoo.oauth.domain.authorization.Authorization
 import me.yapoo.oauth.domain.authorization.AuthorizationCode
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
-import me.yapoo.oauth.domain.authorization.AuthorizationId
-import me.yapoo.oauth.domain.authorization.AuthorizationRepository
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionId
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
 import me.yapoo.oauth.domain.user.UserCredentialRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
-import me.yapoo.oauth.infrastructure.random.UuidFactory
 import me.yapoo.oauth.infrastructure.time.SystemClock
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.router.error.ErrorCode
@@ -30,11 +26,9 @@ import org.springframework.web.util.DefaultUriBuilderFactory
 class AuthenticationHandler(
     private val authorizationSessionRepository: AuthorizationSessionRepository,
     private val userCredentialRepository: UserCredentialRepository,
-    private val authorizationRepository: AuthorizationRepository,
     private val authorizationCodeRepository: AuthorizationCodeRepository,
     private val secureStringFactory: SecureStringFactory,
     private val systemClock: SystemClock,
-    private val uuidFactory: UuidFactory,
 ) {
 
     suspend fun handle(
@@ -73,18 +67,9 @@ class AuthenticationHandler(
                 )
             }
             val now = systemClock.now()
-            val authorizationId = AuthorizationId.new(uuidFactory)
-            val authorization = Authorization.new(
-                id = authorizationId,
-                userSubject = userCredential.id,
-                clientId = authorizationSession.clientId,
-                scopes = authorizationSession.scopes,
-            )
-            authorizationRepository.add(authorization)
-
             val authorizationCode = AuthorizationCode.new(
                 secureStringFactory,
-                authorizationId,
+                userCredential.id,
                 authorizationSession.id,
                 now
             )

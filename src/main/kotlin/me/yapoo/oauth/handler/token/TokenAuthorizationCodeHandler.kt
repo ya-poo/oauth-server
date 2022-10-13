@@ -6,7 +6,9 @@ import arrow.core.rightIfNotNull
 import me.yapoo.oauth.config.RsaKeyPair
 import me.yapoo.oauth.domain.authorization.AccessToken
 import me.yapoo.oauth.domain.authorization.AccessTokenRepository
+import me.yapoo.oauth.domain.authorization.Authorization
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
+import me.yapoo.oauth.domain.authorization.AuthorizationId
 import me.yapoo.oauth.domain.authorization.AuthorizationRepository
 import me.yapoo.oauth.domain.authorization.RefreshToken
 import me.yapoo.oauth.domain.authorization.RefreshTokenRepository
@@ -14,6 +16,7 @@ import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepositor
 import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
+import me.yapoo.oauth.infrastructure.random.UuidFactory
 import me.yapoo.oauth.infrastructure.time.SystemClock
 import me.yapoo.oauth.mixin.arrow.coEnsure
 import me.yapoo.oauth.mixin.arrow.coEnsureNotNull
@@ -36,6 +39,7 @@ class TokenAuthorizationCodeHandler(
     private val systemClock: SystemClock,
     private val secureStringFactory: SecureStringFactory,
     private val rsaKeyPair: RsaKeyPair,
+    private val uuidFactory: UuidFactory,
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
@@ -148,7 +152,7 @@ class TokenAuthorizationCodeHandler(
             }
 
             val now = systemClock.now()
-            coEnsure(!authorizationCode.isExpired(now)) {
+            coEnsure(now < authorizationCode.expiresAt) {
                 ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
                     TokenErrorResponse(
                         TokenErrorResponse.ErrorCode.InvalidGrant,
@@ -157,15 +161,14 @@ class TokenAuthorizationCodeHandler(
                 )
             }
 
-            val authorization = authorizationRepository.findById(authorizationCode.authorizationId)
-                .rightIfNotNull {
-                    ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
-                        TokenErrorResponse(
-                            TokenErrorResponse.ErrorCode.InvalidGrant,
-                            "expired authorization code"
-                        )
-                    )
-                }.bind()
+            val authorizationId = AuthorizationId.new(uuidFactory)
+            val authorization = Authorization.new(
+                id = authorizationId,
+                userSubject = authorizationCode.userSubject,
+                clientId = authorizationSession.clientId,
+                scopes = authorizationSession.scopes,
+            )
+            authorizationRepository.add(authorization)
 
             val idToken = if (authorizationSession.openId.required) {
                 IdToken(
@@ -180,13 +183,13 @@ class TokenAuthorizationCodeHandler(
 
             val accessToken = AccessToken.new(
                 secureStringFactory,
-                authorizationCode.authorizationId,
+                authorization.id,
                 now
             )
             accessTokenRepository.add(accessToken)
             val refreshToken = RefreshToken.new(
                 secureStringFactory,
-                authorizationCode.authorizationId,
+                authorization.id,
                 now
             )
             refreshTokenRepository.add(refreshToken)
