@@ -3,6 +3,7 @@ package me.yapoo.oauth.handler.token
 import arrow.core.Either
 import arrow.core.continuations.either
 import arrow.core.rightIfNotNull
+import me.yapoo.oauth.config.RsaKeyPair
 import me.yapoo.oauth.domain.authorization.AccessToken
 import me.yapoo.oauth.domain.authorization.AccessTokenRepository
 import me.yapoo.oauth.domain.authorization.AuthorizationCodeRepository
@@ -34,6 +35,7 @@ class TokenAuthorizationCodeHandler(
     private val clientRepository: ClientRepository,
     private val systemClock: SystemClock,
     private val secureStringFactory: SecureStringFactory,
+    private val rsaKeyPair: RsaKeyPair,
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
@@ -165,6 +167,17 @@ class TokenAuthorizationCodeHandler(
                     )
                 }.bind()
 
+            val idToken = if (authorizationSession.openId.required) {
+                IdToken(
+                    sub = authorization.userSubject,
+                    clientId = authorization.clientId,
+                    now = now,
+                    nonce = authorizationSession.openId.nonce,
+                    rsaPublicKey = rsaKeyPair.public,
+                    rsaPrivateKey = rsaKeyPair.private,
+                )
+            } else null
+
             val accessToken = AccessToken.new(
                 secureStringFactory,
                 authorizationCode.authorizationId,
@@ -185,11 +198,12 @@ class TokenAuthorizationCodeHandler(
                     it.pragma = "no-cache"
                 }
                 .bodyValueAndAwait(
-                    TokenResponse(
+                    TokenAuthorizationCodeResponse(
                         accessToken = accessToken.value,
                         expiresIn = accessToken.expiresIn.seconds.toInt(),
                         refreshToken = refreshToken.value,
-                        scope = authorization.scopes
+                        scope = authorization.scopes,
+                        idToken = idToken?.value
                     )
                 )
         }

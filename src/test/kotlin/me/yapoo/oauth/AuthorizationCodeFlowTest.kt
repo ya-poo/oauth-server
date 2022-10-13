@@ -2,10 +2,11 @@
 
 package me.yapoo.oauth
 
+import com.auth0.jwt.JWT
 import me.yapoo.oauth.handler.authentication.AuthenticationRequest
 import me.yapoo.oauth.handler.client.RegisterClientRequest
 import me.yapoo.oauth.handler.client.RegisterClientResponse
-import me.yapoo.oauth.handler.token.TokenResponse
+import me.yapoo.oauth.handler.token.TokenAuthorizationCodeResponse
 import me.yapoo.oauth.mixin.queryParams
 import me.yapoo.oauth.request.authenticate
 import me.yapoo.oauth.request.authorization
@@ -77,7 +78,7 @@ class AuthorizationCodeFlowTest {
                     .with("code", code)
                     .with("redirect_uri", "https://example.com")
                     .with("client_id", client.clientId)
-            ).exchange().expectBody<TokenResponse>().returnResult().responseBody!!
+            ).exchange().expectBody<TokenAuthorizationCodeResponse>().returnResult().responseBody!!
 
         webTestClient.get().uri("/hello")
             .headers {
@@ -128,6 +129,36 @@ class AuthorizationCodeFlowTest {
             code = code,
             redirectUri = client.redirectUris.first(),
             codeVerifier = codeVerifier
-        ).expectBody<TokenResponse>().returnResult().responseBody!!
+        ).expectBody<TokenAuthorizationCodeResponse>().returnResult().responseBody!!
+    }
+
+    @Test
+    fun `ID トークンを発行する認可コードフロー`() {
+        val client = webTestClient.registerClient(
+            scopes = listOf("hello", "openid")
+        ).expectBody<RegisterClientResponse>().returnResult().responseBody!!
+        val authorizationResponseLocation = webTestClient.authorization(
+            clientId = client.clientId,
+            redirectUri = client.redirectUris.first(),
+            scope = "hello openid",
+            nonce = "test-nonce"
+        ).expectBody<Unit>().returnResult().responseHeaders.location!!
+        val asi = authorizationResponseLocation.queryParams["asi"]?.singleOrNull()!!
+
+        val authenticationResponseLocation = webTestClient.authenticate(asi = asi)
+            .expectBody<Unit>().returnResult().responseHeaders.location!!
+        val code = authenticationResponseLocation.queryParams["code"]?.singleOrNull()!!
+
+        val tokenResponse = webTestClient.tokenAuthorizationCode(
+            clientId = client.clientId,
+            clientSecret = client.clientSecret,
+            code = code,
+            redirectUri = client.redirectUris.first(),
+        ).expectBody<TokenAuthorizationCodeResponse>().returnResult().responseBody!!
+
+        val idToken = JWT.decode(tokenResponse.idToken)
+        assertEquals("oauth-server", idToken.issuer)
+        assertEquals(listOf(client.clientId), idToken.audience)
+        assertEquals("test-nonce", idToken.claims["nonce"]?.asString())
     }
 }

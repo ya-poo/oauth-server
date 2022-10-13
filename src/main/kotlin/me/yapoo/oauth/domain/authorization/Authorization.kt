@@ -1,6 +1,5 @@
 package me.yapoo.oauth.domain.authorization
 
-import arrow.core.NonEmptyList
 import me.yapoo.oauth.domain.client.ClientId
 import me.yapoo.oauth.domain.user.UserSubject
 
@@ -8,7 +7,8 @@ data class Authorization(
     val id: AuthorizationId,
     val userSubject: UserSubject,
     val clientId: ClientId,
-    val scopes: NonEmptyList<String>,
+    // ここには `openid` は入れない
+    val scopes: List<String>,
 ) {
 
     companion object {
@@ -17,7 +17,7 @@ data class Authorization(
             id: AuthorizationId,
             userSubject: UserSubject,
             clientId: ClientId,
-            scopes: NonEmptyList<String>,
+            scopes: List<String>,
         ): Authorization {
             return Authorization(
                 id = id,

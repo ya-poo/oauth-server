@@ -149,7 +149,7 @@ class TokenRefreshTokenHandler(
                     it.pragma = "no-cache"
                 }
                 .bodyValueAndAwait(
-                    TokenResponse(
+                    TokenRefreshTokenResponse(
                         accessToken = nextAccessToken.value,
                         expiresIn = nextAccessToken.expiresIn.seconds.toInt(),
                         refreshToken = nextAccessToken.value,

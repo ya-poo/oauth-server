@@ -3,7 +3,7 @@
 package me.yapoo.oauth
 
 import me.yapoo.oauth.handler.client.RegisterClientResponse
-import me.yapoo.oauth.handler.token.TokenResponse
+import me.yapoo.oauth.handler.token.TokenAuthorizationCodeResponse
 import me.yapoo.oauth.mixin.queryParams
 import me.yapoo.oauth.request.authenticate
 import me.yapoo.oauth.request.authorization
@@ -43,13 +43,13 @@ class RefreshTokenTest {
             clientSecret = client.clientSecret,
             code = code,
             redirectUri = client.redirectUris.first(),
-        ).expectBody<TokenResponse>().returnResult().responseBody!!
+        ).expectBody<TokenAuthorizationCodeResponse>().returnResult().responseBody!!
 
         val refreshTokenResponse = webTestClient.tokenRefreshToken(
             clientId = client.clientId,
             clientSecret = client.clientSecret,
             refreshToken = tokenResponse.refreshToken
-        ).expectBody<TokenResponse>().returnResult().responseBody!!
+        ).expectBody<TokenAuthorizationCodeResponse>().returnResult().responseBody!!
 
         webTestClient.get().uri("/hello")
             .headers {

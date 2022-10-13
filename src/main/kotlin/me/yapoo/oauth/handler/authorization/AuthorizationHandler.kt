@@ -33,7 +33,7 @@ class AuthorizationHandler(
     private val authorizationSessionRepository: AuthorizationSessionRepository,
 ) {
 
-    // 認可エンドポイント (RFC 6749 - 3.1)
+    // 認可エンドポイント (RFC 6749 - 3.1, OpenID Connect Core 1.0 - 3.1.2)
     // 現在は認可コードフロー (RFC 6749 - 4.1) のみ対応
     // Proof Key for Code Exchange (RFC 7636) に対応。
     // TODO : いくつかのリクエスト値の値のフォーマット (文字種) の検査
@@ -41,6 +41,7 @@ class AuthorizationHandler(
         request: ServerRequest
     ): Either<ServerResponse, ServerResponse> {
         return either {
+            // OAuth 2.0 で定義されているリクエスト
             val clientId = request.queryParamOrNull("client_id")
                 ?.let(::ClientId)
                 .rightIfNotNull {
@@ -149,14 +150,24 @@ class AuthorizationHandler(
                 }
             }
 
+            // OpenID Connect Core 1.0 で新規に指定されているリクエスト。
+            // 以下は OPTIONAL につき省略:
+            // display, prompt, max_age, ui_locales, id_token_hint, login_hint, acr_values
+            val openIdRequired = scopes.contains("openid")
+            val nonce = if (openIdRequired) request.queryParamOrNull("nonce") else null
+
             val authorizationSession = AuthorizationSession(
                 id = AuthorizationSessionId.next(secureStringFactory),
                 clientId = clientId,
                 redirectUri = redirectUri,
-                scopes = scopes,
+                scopes = scopes.filterNot { it == "openid" },
                 state = state,
                 redirectUriSpecified = request.queryParamOrNull("redirect_uri") != null,
-                proofKey = proofKey
+                proofKey = proofKey,
+                openId = AuthorizationSession.OpenId(
+                    required = openIdRequired,
+                    nonce = nonce
+                )
             )
             authorizationSessionRepository.add(authorizationSession)
 

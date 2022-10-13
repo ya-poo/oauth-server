@@ -9,7 +9,8 @@ fun WebTestClient.authorization(
     scope: String = "hello",
     state: String? = null,
     codeChallenge: String? = null,
-    codeChallengeMethod: String? = null
+    codeChallengeMethod: String? = null,
+    nonce: String? = null,
 ): WebTestClient.ResponseSpec {
     return get().uri {
         it.path("/authorization").apply {
@@ -25,6 +26,9 @@ fun WebTestClient.authorization(
             }
             if (codeChallengeMethod != null) {
                 queryParam("code_challenge_method", codeChallengeMethod)
+            }
+            if (nonce != null) {
+                queryParam("nonce", nonce)
             }
         }.build()
     }.exchange()
