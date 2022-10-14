@@ -9,13 +9,11 @@ data class AccessToken(
     val authorizationId: AuthorizationId,
     val issuedAt: Instant,
 ) {
-
-    val expiresIn: Duration = Duration.ofMinutes(30)
-
-    fun expired(now: Instant) =
-        issuedAt + expiresIn < now
+    val expiresAt: Instant = issuedAt + expiresIn
 
     companion object {
+        val expiresIn: Duration = Duration.ofMinutes(30)
+
         private const val TOKEN_LENGTH = 30
 
         fun new(

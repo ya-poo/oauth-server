@@ -103,7 +103,7 @@ class TokenRefreshTokenHandler(
                 }.bind()
 
             val now = systemClock.now()
-            coEnsure(!refreshToken.expired(now)) {
+            coEnsure(now < refreshToken.expiresAt) {
                 ServerResponse.badRequest().bodyValueAndAwait(
                     TokenErrorResponse(
                         TokenErrorResponse.ErrorCode.InvalidGrant,
@@ -151,7 +151,7 @@ class TokenRefreshTokenHandler(
                 .bodyValueAndAwait(
                     TokenRefreshTokenResponse(
                         accessToken = nextAccessToken.value,
-                        expiresIn = nextAccessToken.expiresIn.seconds.toInt(),
+                        expiresIn = AccessToken.expiresIn.seconds.toInt(),
                         refreshToken = nextAccessToken.value,
                         scope = scopes
                     )

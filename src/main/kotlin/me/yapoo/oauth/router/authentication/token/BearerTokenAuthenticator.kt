@@ -58,7 +58,7 @@ class BearerTokenAuthenticator(
                 }.bind()
 
             val now = systemClock.now()
-            coEnsure(!token.expired(now)) {
+            coEnsure(now < token.expiresAt) {
                 ServerResponse.status(HttpStatus.UNAUTHORIZED)
                     .header(
                         "WWW-Authenticate",

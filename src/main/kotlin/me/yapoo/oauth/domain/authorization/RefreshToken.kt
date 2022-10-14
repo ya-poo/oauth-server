@@ -9,11 +9,7 @@ data class RefreshToken(
     val authorizationId: AuthorizationId,
     val issuedAt: Instant,
 ) {
-
-    private val expiresIn: Duration = Duration.ofDays(1)
-
-    fun expired(now: Instant) =
-        issuedAt + expiresIn < now
+    val expiresAt: Instant = issuedAt + expiresIn
 
     fun next(
         secureStringFactory: SecureStringFactory,
@@ -27,6 +23,8 @@ data class RefreshToken(
     }
 
     companion object {
+        val expiresIn: Duration = Duration.ofDays(1)
+
         private const val TOKEN_LENGTH = 30
 
         fun new(

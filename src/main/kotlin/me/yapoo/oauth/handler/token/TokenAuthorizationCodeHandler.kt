@@ -203,7 +203,7 @@ class TokenAuthorizationCodeHandler(
                 .bodyValueAndAwait(
                     TokenAuthorizationCodeResponse(
                         accessToken = accessToken.value,
-                        expiresIn = accessToken.expiresIn.seconds.toInt(),
+                        expiresIn = AccessToken.expiresIn.seconds.toInt(),
                         refreshToken = refreshToken.value,
                         scope = authorization.scopes,
                         idToken = idToken?.value
