@@ -171,10 +171,12 @@ class TokenAuthorizationCodeHandler(
             authorizationRepository.add(authorization)
 
             val idToken = if (authorizationSession.openId.required) {
+                // 認可コード発行時刻を `auth_time` とする。
                 IdToken(
                     sub = authorization.userSubject,
                     clientId = authorization.clientId,
                     now = now,
+                    authTime = authorizationCode.issuedAt,
                     nonce = authorizationSession.openId.nonce,
                     rsaPublicKey = rsaKeyPair.public,
                     rsaPrivateKey = rsaKeyPair.private,

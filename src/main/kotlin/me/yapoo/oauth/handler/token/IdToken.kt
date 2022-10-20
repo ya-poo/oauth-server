@@ -14,6 +14,7 @@ data class IdToken(
     private val sub: UserSubject,
     private val clientId: ClientId,
     private val now: Instant,
+    private val authTime: Instant,
     private val nonce: String?,
     private val rsaPublicKey: RSAPublicKey,
     private val rsaPrivateKey: RSAPrivateKey,
@@ -26,7 +27,7 @@ data class IdToken(
         withSubject(sub.value)
         withIssuedAt(now)
         withExpiresAt(now + LIFETIME)
-        withClaim("auth_time", now)
+        withClaim("auth_time", authTime)
         if (nonce != null) {
             withClaim("nonce", nonce)
         }
