@@ -160,5 +160,12 @@ class AuthorizationCodeFlowTest {
         assertEquals("oauth-server", idToken.issuer)
         assertEquals(listOf(client.clientId), idToken.audience)
         assertEquals("test-nonce", idToken.claims["nonce"]?.asString())
+        assertEquals("test-user-id", idToken.subject)
+        assertEquals("田中太郎", idToken.claims["name"]?.asString())
+        assertEquals("yapoo", idToken.claims["preferred_username"]?.asString())
+        assertEquals("test@example.com", idToken.claims["email"]?.asString())
+        assertEquals(true, idToken.claims["email_verified"]?.asBoolean())
+        assertEquals("male", idToken.claims["gender"]?.asString())
+        assertEquals("1980-01-01", idToken.claims["birthdate"]?.asString())
     }
 }

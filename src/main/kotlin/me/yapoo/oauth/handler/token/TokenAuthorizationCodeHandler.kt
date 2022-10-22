@@ -15,6 +15,7 @@ import me.yapoo.oauth.domain.authorization.RefreshTokenRepository
 import me.yapoo.oauth.domain.authorization.session.AuthorizationSessionRepository
 import me.yapoo.oauth.domain.client.Client
 import me.yapoo.oauth.domain.client.ClientRepository
+import me.yapoo.oauth.domain.user.UserInformationRepository
 import me.yapoo.oauth.infrastructure.random.SecureStringFactory
 import me.yapoo.oauth.infrastructure.random.UuidFactory
 import me.yapoo.oauth.infrastructure.time.SystemClock
@@ -40,6 +41,7 @@ class TokenAuthorizationCodeHandler(
     private val secureStringFactory: SecureStringFactory,
     private val rsaKeyPair: RsaKeyPair,
     private val uuidFactory: UuidFactory,
+    private val userInformationRepository: UserInformationRepository,
 ) {
 
     // トークンエンドポイント (RFC 6749 - 3.2)
@@ -170,10 +172,20 @@ class TokenAuthorizationCodeHandler(
             )
             authorizationRepository.add(authorization)
 
+            val userInformation = userInformationRepository.findById(authorization.userSubject)
+                .rightIfNotNull {
+                    ServerResponse.status(HttpStatus.BAD_REQUEST).bodyValueAndAwait(
+                        TokenErrorResponse(
+                            TokenErrorResponse.ErrorCode.InvalidRequest,
+                            "user was not found"
+                        )
+                    )
+                }.bind()
+
             val idToken = if (authorizationSession.openId.required) {
                 // 認可コード発行時刻を `auth_time` とする。
                 IdToken(
-                    sub = authorization.userSubject,
+                    userInformation = userInformation,
                     clientId = authorization.clientId,
                     now = now,
                     authTime = authorizationCode.issuedAt,
