@@ -45,6 +45,8 @@ class AuthorizationHandler(
             val clientId = request.queryParamOrNull("client_id")
                 ?.let(::ClientId)
                 .rightIfNotNull {
+                    // RFC 6749 4.1.2.1 では、リダイレクトによるエラー返却が出来ない場合について記載がない。
+                    // ここでは独自のエラーを返却しておく。
                     ServerResponse.badRequest()
                         .bodyValueAndAwait(
                             ErrorResponse(ErrorCode.BAD_REQUEST.value, "`client_id` must be specified.")
@@ -171,7 +173,7 @@ class AuthorizationHandler(
             )
             authorizationSessionRepository.add(authorizationSession)
 
-            // TODO: asi は暗号化する, scope も含める。JWE にしたい。
+            // TODO: scope も含める。JWE にしたい。
             ServerResponse
                 .status(HttpStatus.FOUND)
                 .location(

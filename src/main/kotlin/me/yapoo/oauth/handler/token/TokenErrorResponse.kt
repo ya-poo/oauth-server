@@ -11,7 +11,10 @@ data class TokenErrorResponse(
     // OPTIONAL なのでここでは null とする。
     val errorUri: String? = null
 
-    enum class ErrorCode(val value: String) {
+    enum class ErrorCode(
+        @JsonValue
+        val value: String
+    ) {
         InvalidRequest("invalid_request"),
         InvalidClient("invalid_client"),
         InvalidGrant("invalid_grant"),
@@ -25,8 +28,5 @@ data class TokenErrorResponse(
         InternalServerError("internal_server_error"),
         ClientNotFound("client_not_found"),
         ;
-
-        @JsonValue
-        fun value(): String = value
     }
 }
