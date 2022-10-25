@@ -12,7 +12,5 @@ data class DeviceAuthorizationSession(
     val issuedAt: Instant,
 ) {
 
-    companion object {
-        val expiresIn: Duration = Duration.ofSeconds(600)
-    }
+    val expiresIn: Duration = Duration.ofSeconds(600)
 }

@@ -5,4 +5,8 @@ interface UserCodeRepository {
     suspend fun add(
         userCode: UserCode
     )
+
+    suspend fun findByDeviceAuthorizationSessionId(
+        deviceAuthorizationSessionId: DeviceAuthorizationSessionId
+    ): UserCode?
 }

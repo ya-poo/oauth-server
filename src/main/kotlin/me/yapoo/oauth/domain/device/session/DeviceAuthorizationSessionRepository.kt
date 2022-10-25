@@ -5,4 +5,8 @@ interface DeviceAuthorizationSessionRepository {
     suspend fun add(
         deviceAuthorizationSession: DeviceAuthorizationSession
     )
+
+    suspend fun findByDeviceCode(
+        deviceCode: String
+    ): DeviceAuthorizationSession?
 }

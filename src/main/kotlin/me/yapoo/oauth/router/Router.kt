@@ -9,6 +9,7 @@ import me.yapoo.oauth.handler.deviceAuthorization.DeviceAuthorizationHandler
 import me.yapoo.oauth.handler.metadata.MetadataHandler
 import me.yapoo.oauth.handler.revoke.TokenRevocationHandler
 import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
+import me.yapoo.oauth.handler.token.TokenDeviceCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
 import me.yapoo.oauth.handler.token.TokenRefreshTokenHandler
 import me.yapoo.oauth.mixin.spring.getSingle
@@ -36,6 +37,7 @@ class Router(
     private val tokenRevocationHandler: TokenRevocationHandler,
     private val metadataHandler: MetadataHandler,
     private val deviceAuthorizationHandler: DeviceAuthorizationHandler,
+    private val tokenDeviceCodeHandler: TokenDeviceCodeHandler,
 ) {
 
     @Bean
@@ -60,6 +62,7 @@ class Router(
             when (it.awaitFormData().getSingle("grant_type")) {
                 "authorization_code" -> tokenAuthorizationCodeHandler.handle(it, client).merge()
                 "refresh_token" -> tokenRefreshTokenHandler.handle(it, client).merge()
+                "urn:ietf:params:oauth:grant-type:device_code" -> tokenDeviceCodeHandler.handle(it, client).merge()
                 else -> ServerResponse.badRequest().bodyValueAndAwait(
                     TokenErrorResponse(
                         TokenErrorResponse.ErrorCode.UnsupportedGrantType,

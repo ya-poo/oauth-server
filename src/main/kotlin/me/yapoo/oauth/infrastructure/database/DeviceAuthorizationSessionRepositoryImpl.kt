@@ -14,4 +14,12 @@ class DeviceAuthorizationSessionRepositoryImpl : DeviceAuthorizationSessionRepos
     ) {
         list.add(deviceAuthorizationSession)
     }
+
+    override suspend fun findByDeviceCode(
+        deviceCode: String
+    ): DeviceAuthorizationSession? {
+        return list.singleOrNull {
+            it.deviceCode == deviceCode
+        }
+    }
 }

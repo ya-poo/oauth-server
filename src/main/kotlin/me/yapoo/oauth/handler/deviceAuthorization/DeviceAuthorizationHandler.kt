@@ -40,6 +40,7 @@ class DeviceAuthorizationHandler(
         return either {
             val body = request.awaitFormData()
 
+            // ここでは通常の認可エンドポイントと同様に `scope` の省略は許可しない
             val scopes = (body.getSingle("scope")?.split(" ") ?: emptyList())
                 .rightIfNotEmpty {
                     ServerResponse.badRequest()
@@ -101,7 +102,7 @@ class DeviceAuthorizationHandler(
                         deviceCode = deviceAuthorizationSession.deviceCode,
                         userCode = userCode.value,
                         verificationUri = "http://localhost:3000",
-                        expiresIn = DeviceAuthorizationSession.expiresIn.toSeconds().toInt(),
+                        expiresIn = deviceAuthorizationSession.expiresIn.toSeconds().toInt(),
                     )
                 )
         }
