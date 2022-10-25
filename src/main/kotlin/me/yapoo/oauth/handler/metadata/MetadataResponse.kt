@@ -9,7 +9,10 @@ data class MetadataResponse(
     val scopesSupported: List<String> = listOf("hello", "world", "openid"),
     val responseTypesSupported: List<String> = listOf("code"),
     val responseModesSupported: List<String> = listOf("query"),
-    val grantTypesSupported: List<String> = listOf("authorization_code"),
+    val grantTypesSupported: List<String> = listOf(
+        "authorization_code",
+        "urn:ietf:params:oauth:grant-type:device_code"
+    ),
     val tokenEndpointAuthMethodsSupported: List<String> = listOf("client_secret_basic"),
     val tokenEndpointAuthSigningAlgValuesSupported: List<String>? = null,
     val serviceDocumentation: String? = null,
@@ -18,5 +21,7 @@ data class MetadataResponse(
     val opTosUri: String? = null,
     val revocationEndpoint: String = "http://localhost:8080/revoke",
     val revocationEndpointAuthMethodsSupported: List<String> = listOf("client_secret_basic"),
-    val codeChallengeMethodsSupported: List<String> = listOf("plain", "S256")
+    val codeChallengeMethodsSupported: List<String> = listOf("plain", "S256"),
+    // RFC 8628
+    val deviceAuthorizationEndpoint: String = "http://localhost:8080/device_authorization"
 )
