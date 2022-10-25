@@ -5,6 +5,7 @@ import arrow.core.merge
 import me.yapoo.oauth.handler.authentication.AuthenticationHandler
 import me.yapoo.oauth.handler.authorization.AuthorizationHandler
 import me.yapoo.oauth.handler.client.ClientRegistrationHandler
+import me.yapoo.oauth.handler.metadata.MetadataHandler
 import me.yapoo.oauth.handler.revoke.TokenRevocationHandler
 import me.yapoo.oauth.handler.token.TokenAuthorizationCodeHandler
 import me.yapoo.oauth.handler.token.TokenErrorResponse
@@ -32,10 +33,12 @@ class Router(
     private val clientRegistrationHandler: ClientRegistrationHandler,
     private val bearerTokenAuthenticator: BearerTokenAuthenticator,
     private val tokenRevocationHandler: TokenRevocationHandler,
+    private val metadataHandler: MetadataHandler,
 ) {
 
     @Bean
     fun routes() = coRouter {
+
         POST("/client") {
             clientRegistrationHandler.handle(it).merge()
         }
@@ -90,6 +93,12 @@ class Router(
                         )
                     )
             }.merge()
+        }
+
+        ".well-known".nest {
+            GET("oauth-authorization-server") {
+                metadataHandler.handle()
+            }
         }
 
         handleException(logger)
