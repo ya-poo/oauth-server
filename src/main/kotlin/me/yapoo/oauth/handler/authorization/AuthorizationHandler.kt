@@ -61,6 +61,12 @@ class AuthorizationHandler(
                         )
                 }
                 .bind()
+            // TODO: OpenID Connect では `redirect_uri` の指定が必須で、OAuth 2.0 は optional
+            // TODO: OAuth 2.0 では、
+            //         * 認可コードフロー
+            //         * コンフィデンシャルクライアント
+            //         * `redirect_uri` の事前登録がない
+            //       の全てが満たされれば、 `redirect_uri` として絶対 URI でフラグメント部を含まなければ任意の値を指定できる
             val redirectUri = request.queryParamOrNull("redirect_uri")
                 .let {
                     client.validateRedirectUri(it)
