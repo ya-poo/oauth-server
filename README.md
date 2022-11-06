@@ -10,6 +10,7 @@
 * [Proof Key for Code Exchange by OAuth Public Clients (RFC 7636)](https://www.rfc-editor.org/rfc/rfc7636)
 * [OAuth 2.0 Authorization Server Metadata (RFC 8414)](https://www.rfc-editor.org/rfc/rfc8414)
 * [OAuth 2.0 Device Authorization Grant (RFC 8628)](https://www.rfc-editor.org/rfc/rfc8628)
+* [OAuth 2.0 Authorization Server Issuer Identification](https://www.rfc-editor.org/rfc/rfc9207)
 
 ### OpenID Connect
 

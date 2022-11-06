@@ -64,6 +64,7 @@ class AuthorizationCodeFlowTest {
                     password = "password"
                 )
             ).exchange().expectBody<Unit>().returnResult().responseHeaders.location!!
+        assertEquals(listOf("oauth-server"), authenticationResponseLocation.queryParams["iss"])
         val code = authenticationResponseLocation.queryParams["code"]?.singleOrNull()!!
         assertEquals(state, authenticationResponseLocation.queryParams["state"]?.singleOrNull())
 

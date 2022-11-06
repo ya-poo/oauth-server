@@ -80,6 +80,8 @@ class AuthenticationHandler(
                 .location(
                     DefaultUriBuilderFactory(authorizationSession.redirectUri).builder().apply {
                         queryParam("code", authorizationCode.value)
+                        // RFC 9207
+                        queryParam("iss", "oauth-server")
                         if (authorizationSession.state != null) {
                             queryParam("state", authorizationSession.state.value)
                         }

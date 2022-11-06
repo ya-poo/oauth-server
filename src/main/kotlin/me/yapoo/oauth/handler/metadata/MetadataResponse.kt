@@ -23,5 +23,6 @@ data class MetadataResponse(
     val revocationEndpointAuthMethodsSupported: List<String> = listOf("client_secret_basic"),
     val codeChallengeMethodsSupported: List<String> = listOf("plain", "S256"),
     // RFC 8628
-    val deviceAuthorizationEndpoint: String = "http://localhost:8080/device_authorization"
+    val deviceAuthorizationEndpoint: String = "http://localhost:8080/device_authorization",
+    val authorizationResponseIssParameterSupported: Boolean = true
 )

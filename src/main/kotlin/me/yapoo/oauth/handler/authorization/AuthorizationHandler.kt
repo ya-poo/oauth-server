@@ -209,6 +209,8 @@ class AuthorizationHandler(
                     .apply {
                         queryParam("error", error.value)
                         queryParam("error_description", errorDescription)
+                        // RFC 9207
+                        queryParam("iss", "oauth-server")
                         if (state != null) {
                             queryParam("state", state.value)
                         }
