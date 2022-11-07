@@ -17,6 +17,12 @@ data class Client(
         Public,
     }
 
+    /*
+     * TODO: 下記の考慮が漏れている
+     *  1. OpenID Connect では `uri` は指定が必須かつ、事前登録済みのものと完全一致が必要。
+     *  2. OAuth 2.0 では認可コードフローかつコンフィデンシャルクライアントの場合、`redirect_uri` は事前登録不要で、
+     *     かつその場合は絶対 URI かつフラグメント部を含まない任意の URI を受け付ける。
+     */
     fun validateRedirectUri(
         uri: String?
     ): Either<ValidateRedirectUriException, String> {
